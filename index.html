@@ -1,11 +1,11 @@
 <!--
 Meridian ITP Time Tracker
-Version: v0.3a.1
+Version: v0.3a.2
 Date: 2026-06-16
 Changes:
-- Manual Time Entry now defaults to Total Hours
-- Start Time / End Time remains available as an optional entry method
-Previous Version: v0.3a
+- Added consistent section heading for Timer Entry
+- Added icon to Today's Entries heading
+Previous Version: v0.3a.1
 -->
 
 <!DOCTYPE html>
@@ -407,6 +407,10 @@ Previous Version: v0.3a
 
   <main>
     <section class="card">
+      <div class="section-title">
+        <h2>▶ Timer Entry</h2>
+      </div>
+
       <div class="form-grid">
         <div>
           <label for="project">Project</label>
@@ -514,7 +518,7 @@ Previous Version: v0.3a
 
     <section class="card">
       <div class="section-title">
-        <h2>Today's Entries</h2>
+        <h2>📋 Today's Entries</h2>
         <strong id="dailyTotal">Total: 0.00 hrs</strong>
       </div>
 
@@ -522,7 +526,7 @@ Previous Version: v0.3a
     </section>
 
     <p class="modal-note">
-      v0.3a.1 saves entries locally in this browser. Supabase login and team sync come later.
+      v0.3a.2 saves entries locally in this browser. Supabase login and team sync come later.
     </p>
   </main>
 
