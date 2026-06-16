@@ -1,15 +1,11 @@
 <!--
 Meridian ITP Time Tracker
-Version: v0.2
+Version: v0.2.1
 Date: 2026-06-16
 Changes:
-- Added working Start/Pause/Stop timer
-- Added save timer entry
-- Added manual time entry save
-- Added today's entries rendered from localStorage
-- Added delete entry
-- Added daily total calculation
-Previous Version: v0.1
+- Added "Started at" display under the main timer
+- Timer start time now resets after Stop & Save
+Previous Version: v0.2
 -->
 
 <!DOCTYPE html>
@@ -181,6 +177,12 @@ Previous Version: v0.1
       letter-spacing: 6px;
       color: #061b3a;
       line-height: 1;
+    }
+
+    .timer-started {
+      margin-top: 10px;
+      color: var(--muted);
+      font-weight: 700;
     }
 
     .timer-status {
@@ -398,6 +400,7 @@ Previous Version: v0.1
 
       <div class="timer-display">
         <div class="time" id="timerDisplay">00:00:00</div>
+        <div class="timer-started" id="timerStartedAt">Started at: —</div>
         <div class="timer-status" id="timerStatus">Ready</div>
       </div>
 
@@ -488,7 +491,7 @@ Previous Version: v0.1
     </section>
 
     <p class="modal-note">
-      v0.2 saves entries locally in this browser. Supabase login and team sync come later.
+      v0.2.1 saves entries locally in this browser. Supabase login and team sync come later.
     </p>
   </main>
 
@@ -520,8 +523,15 @@ Previous Version: v0.1
     let timerStartDateTime = null;
 
     function populateSelects() {
-      const projectSelects = [document.getElementById("project"), document.getElementById("manualProject")];
-      const taskSelects = [document.getElementById("taskType"), document.getElementById("manualTaskType")];
+      const projectSelects = [
+        document.getElementById("project"),
+        document.getElementById("manualProject")
+      ];
+
+      const taskSelects = [
+        document.getElementById("taskType"),
+        document.getElementById("manualTaskType")
+      ];
 
       projectSelects.forEach(select => {
         select.innerHTML = projects.map(project => `<option>${project}</option>`).join("");
@@ -549,6 +559,8 @@ Previous Version: v0.1
 
       if (!timerStartDateTime) {
         timerStartDateTime = new Date();
+        document.getElementById("timerStartedAt").textContent =
+          `Started at: ${formatTimeForDisplay(timerStartDateTime)}`;
       }
 
       timerRunning = true;
@@ -603,6 +615,7 @@ Previous Version: v0.1
       timerStartDateTime = null;
       document.getElementById("timerNotes").value = "";
       document.getElementById("timerStatus").textContent = "Saved";
+      document.getElementById("timerStartedAt").textContent = "Started at: —";
       updateTimerDisplay();
       renderEntries();
     }
@@ -782,6 +795,7 @@ Previous Version: v0.1
 
       const today = new Date().toISOString().split("T")[0];
       document.getElementById("manualDate").value = today;
+      document.getElementById("timerStartedAt").textContent = "Started at: —";
 
       updateTimerDisplay();
       renderEntries();
