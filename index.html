@@ -1,14 +1,11 @@
 <!--
 Meridian ITP Time Tracker
-Version: v0.3a.5
+Version: v0.3a.6
 Date: 2026-06-16
 Changes:
-- Added simple running status bar to Timer Entry
-- Added Hours / Minutes / Seconds labels above timer
-- Added subtle shadow/glow to timer numbers
-- Kept timer display simple
-- Removed duplicate project/task summary from timer box
-Previous Version: v0.3a.3
+- Centered Hours / Minutes / Seconds labels over timer more cleanly
+- Removed timer number shadow/glow
+Previous Version: v0.3a.5
 -->
 
 <!DOCTYPE html>
@@ -223,15 +220,16 @@ Previous Version: v0.3a.3
     }
 
     .timer-labels {
-      display: flex;
-      justify-content: center;
-      gap: clamp(32px, 8vw, 96px);
-      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      width: min(520px, 100%);
+      margin: 0 auto 12px;
       color: var(--muted);
       font-size: 0.85rem;
       font-weight: 900;
       text-transform: uppercase;
       letter-spacing: 1px;
+      text-align: center;
     }
 
     .timer-time {
@@ -240,9 +238,6 @@ Previous Version: v0.3a.3
       color: #061b3a;
       letter-spacing: 6px;
       line-height: 1;
-      text-shadow:
-        0 2px 6px rgba(6, 27, 58, 0.16),
-        0 0 14px rgba(18, 90, 223, 0.10);
     }
 
     .timer-started {
@@ -457,8 +452,8 @@ Previous Version: v0.3a.3
       }
 
       .timer-labels {
-        gap: 28px;
-        font-size: 0.78rem;
+        width: min(360px, 100%);
+        font-size: 0.76rem;
       }
 
       .timer-time {
@@ -628,7 +623,7 @@ Previous Version: v0.3a.3
     </section>
 
     <p class="modal-note">
-      v0.3a.5 saves entries locally in this browser. Supabase login and team sync come later.
+      v0.3a.6 saves entries locally in this browser. Supabase login and team sync come later.
     </p>
   </main>
 
