@@ -1,11 +1,13 @@
 <!--
 Meridian ITP Time Tracker
-Version: v0.3a.3
+Version: v0.3a.4
 Date: 2026-06-16
 Changes:
-- Added shadow to all buttons
-- Added hover and pressed feedback to all buttons
-Previous Version: v0.3a.2
+- Polished Timer Entry display with dashboard-style hour/minute/second cards
+- Added running status bar
+- Added started/project/task summary under timer
+- Manual Time Entry and Today's Entries sections retained
+Previous Version: v0.3a.3
 -->
 
 <!DOCTYPE html>
@@ -22,6 +24,7 @@ Previous Version: v0.3a.2
       --blue: #125adf;
       --blue-soft: #eaf1ff;
       --red: #d92d20;
+      --green: #1f9d45;
       --bg: #f5f7fb;
       --card: #ffffff;
       --border: #d8e0ec;
@@ -165,31 +168,112 @@ Previous Version: v0.3a.2
 
     .full { grid-column: 1 / -1; }
 
-    .timer-display {
-      text-align: center;
-      margin: 28px 0 22px;
+    .timer-panel {
+      margin-top: 24px;
+      padding: 18px;
+      border: 1px solid #dce7f7;
+      background: linear-gradient(180deg, #f9fbff, #ffffff);
+      border-radius: 18px;
     }
 
-    .timer-display .time {
-      font-size: clamp(4rem, 10vw, 7rem);
+    .timer-state-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #eaf8ef;
+      border: 1px solid #b7e4c7;
+      color: var(--green);
+      padding: 13px 16px;
+      border-radius: 12px;
       font-weight: 900;
-      letter-spacing: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 20px;
+    }
+
+    .status-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 6px rgba(31, 157, 69, 0.12);
+    }
+
+    .timer-display {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 18px;
+      align-items: center;
+      justify-content: center;
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .time-box {
+      background: linear-gradient(145deg, #061b3a, #0b2d5c);
+      border: 1px solid rgba(109, 168, 255, 0.45);
+      border-radius: 18px;
+      padding: 26px 16px 18px;
+      box-shadow:
+        0 14px 28px rgba(6, 27, 58, 0.22),
+        inset 0 0 24px rgba(47, 128, 255, 0.22);
+      text-align: center;
+      min-width: 180px;
+    }
+
+    .time-number {
+      color: #ffffff;
+      font-size: clamp(3.8rem, 8vw, 5.8rem);
+      line-height: 0.9;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-shadow:
+        0 0 12px rgba(109, 168, 255, 0.45),
+        0 0 22px rgba(109, 168, 255, 0.2);
+    }
+
+    .time-label {
+      color: #6da8ff;
+      font-weight: 900;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 12px;
+    }
+
+    .time-colon {
       color: #061b3a;
+      font-size: 4rem;
+      font-weight: 900;
       line-height: 1;
     }
 
-    .timer-started {
-      margin-top: 10px;
-      color: var(--muted);
-      font-weight: 700;
+    .timer-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 980px;
+      margin: 22px auto 0;
     }
 
-    .timer-status {
-      margin-top: 10px;
+    .summary-pill {
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-weight: 800;
+      color: var(--text);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .summary-pill span {
       color: var(--muted);
       font-weight: 800;
-      text-transform: uppercase;
-      font-size: 0.78rem;
     }
 
     .timer-actions {
@@ -197,7 +281,7 @@ Previous Version: v0.3a.2
       grid-template-columns: repeat(3, 1fr);
       gap: 20px;
       max-width: 880px;
-      margin: 0 auto;
+      margin: 26px auto 0;
     }
 
     button {
@@ -388,8 +472,21 @@ Previous Version: v0.3a.2
 
       .form-grid,
       .manual-options,
-      .timer-actions {
+      .timer-actions,
+      .timer-summary {
         grid-template-columns: 1fr;
+      }
+
+      .timer-display {
+        grid-template-columns: 1fr;
+      }
+
+      .time-colon {
+        display: none;
+      }
+
+      .time-box {
+        min-width: 0;
       }
 
       table {
@@ -428,12 +525,12 @@ Previous Version: v0.3a.2
       <div class="form-grid">
         <div>
           <label for="project">Project</label>
-          <select id="project"></select>
+          <select id="project" onchange="updateTimerSummary()"></select>
         </div>
 
         <div>
           <label for="taskType">Task Type</label>
-          <select id="taskType"></select>
+          <select id="taskType" onchange="updateTimerSummary()"></select>
         </div>
 
         <div class="full">
@@ -442,10 +539,38 @@ Previous Version: v0.3a.2
         </div>
       </div>
 
-      <div class="timer-display">
-        <div class="time" id="timerDisplay">00:00:00</div>
-        <div class="timer-started" id="timerStartedAt">Started at: —</div>
-        <div class="timer-status" id="timerStatus">Ready</div>
+      <div class="timer-panel">
+        <div class="timer-state-bar" id="timerStatus">
+          <span class="status-dot"></span>
+          <span>Ready to Start</span>
+        </div>
+
+        <div class="timer-display">
+          <div class="time-box">
+            <div class="time-number" id="timerHours">00</div>
+            <div class="time-label">Hours</div>
+          </div>
+
+          <div class="time-colon">:</div>
+
+          <div class="time-box">
+            <div class="time-number" id="timerMinutes">00</div>
+            <div class="time-label">Minutes</div>
+          </div>
+
+          <div class="time-colon">:</div>
+
+          <div class="time-box">
+            <div class="time-number" id="timerSeconds">00</div>
+            <div class="time-label">Seconds</div>
+          </div>
+        </div>
+
+        <div class="timer-summary">
+          <div class="summary-pill">🕒 <span>Started:</span> <strong id="timerStartedAt">—</strong></div>
+          <div class="summary-pill">📁 <span>Project:</span> <strong id="timerProjectSummary">—</strong></div>
+          <div class="summary-pill">🔧 <span>Task:</span> <strong id="timerTaskSummary">—</strong></div>
+        </div>
       </div>
 
       <div class="timer-actions">
@@ -540,7 +665,7 @@ Previous Version: v0.3a.2
     </section>
 
     <p class="modal-note">
-      v0.3a.3 saves entries locally in this browser. Supabase login and team sync come later.
+      v0.3a.4 saves entries locally in this browser. Supabase login and team sync come later.
     </p>
   </main>
 
@@ -592,16 +717,57 @@ Previous Version: v0.3a.2
       });
     }
 
+    function setTimerStatus(status) {
+      const statusBar = document.getElementById("timerStatus");
+
+      if (status === "running") {
+        statusBar.innerHTML = `<span class="status-dot"></span><span>Timer Running</span>`;
+        statusBar.style.background = "#eaf8ef";
+        statusBar.style.borderColor = "#b7e4c7";
+        statusBar.style.color = "#1f9d45";
+      } else if (status === "paused") {
+        statusBar.innerHTML = `<span class="status-dot"></span><span>Timer Paused</span>`;
+        statusBar.style.background = "#fff7e6";
+        statusBar.style.borderColor = "#ffd591";
+        statusBar.style.color = "#946200";
+      } else if (status === "saved") {
+        statusBar.innerHTML = `<span class="status-dot"></span><span>Entry Saved</span>`;
+        statusBar.style.background = "#eaf1ff";
+        statusBar.style.borderColor = "#b9d2ff";
+        statusBar.style.color = "#125adf";
+      } else {
+        statusBar.innerHTML = `<span class="status-dot"></span><span>Ready to Start</span>`;
+        statusBar.style.background = "#f5f7fb";
+        statusBar.style.borderColor = "#d8e0ec";
+        statusBar.style.color = "#65758b";
+      }
+    }
+
     function formatSeconds(seconds) {
       const h = Math.floor(seconds / 3600);
       const m = Math.floor((seconds % 3600) / 60);
       const s = seconds % 60;
 
-      return [h, m, s].map(unit => String(unit).padStart(2, "0")).join(":");
+      return {
+        hours: String(h).padStart(2, "0"),
+        minutes: String(m).padStart(2, "0"),
+        seconds: String(s).padStart(2, "0")
+      };
     }
 
     function updateTimerDisplay() {
-      document.getElementById("timerDisplay").textContent = formatSeconds(elapsedSeconds);
+      const time = formatSeconds(elapsedSeconds);
+      document.getElementById("timerHours").textContent = time.hours;
+      document.getElementById("timerMinutes").textContent = time.minutes;
+      document.getElementById("timerSeconds").textContent = time.seconds;
+    }
+
+    function updateTimerSummary() {
+      document.getElementById("timerProjectSummary").textContent =
+        document.getElementById("project").value || "—";
+
+      document.getElementById("timerTaskSummary").textContent =
+        document.getElementById("taskType").value || "—";
     }
 
     function startTimer() {
@@ -610,11 +776,12 @@ Previous Version: v0.3a.2
       if (!timerStartDateTime) {
         timerStartDateTime = new Date();
         document.getElementById("timerStartedAt").textContent =
-          `Started at: ${formatTimeForDisplay(timerStartDateTime)}`;
+          formatTimeForDisplay(timerStartDateTime);
       }
 
       timerRunning = true;
-      document.getElementById("timerStatus").textContent = "Running";
+      setTimerStatus("running");
+      updateTimerSummary();
 
       timerInterval = setInterval(() => {
         elapsedSeconds++;
@@ -628,7 +795,7 @@ Previous Version: v0.3a.2
       clearInterval(timerInterval);
       timerInterval = null;
       timerRunning = false;
-      document.getElementById("timerStatus").textContent = "Paused";
+      setTimerStatus("paused");
     }
 
     function stopTimer() {
@@ -666,9 +833,10 @@ Previous Version: v0.3a.2
       elapsedSeconds = 0;
       timerStartDateTime = null;
       document.getElementById("timerNotes").value = "";
-      document.getElementById("timerStatus").textContent = "Saved";
-      document.getElementById("timerStartedAt").textContent = "Started at: —";
+      document.getElementById("timerStartedAt").textContent = "—";
+      setTimerStatus("saved");
       updateTimerDisplay();
+      updateTimerSummary();
       renderEntries();
     }
 
@@ -934,8 +1102,10 @@ Previous Version: v0.3a.2
     function init() {
       populateSelects();
       clearManualForm();
-      document.getElementById("timerStartedAt").textContent = "Started at: —";
+      document.getElementById("timerStartedAt").textContent = "—";
+      setTimerStatus("ready");
       updateTimerDisplay();
+      updateTimerSummary();
       renderEntries();
     }
 
