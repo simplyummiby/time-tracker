@@ -1,11 +1,13 @@
 <!--
 Meridian ITP Time Tracker
-Version: v0.2.2
+Version: v0.3a
 Date: 2026-06-16
 Changes:
-- Fixed manual entries not showing in Today's Entries by using local date matching
-- Added manual entry saved confirmation
-Previous Version: v0.2.1
+- Added Edit button for saved time entries
+- Editing loads entry into Manual Time Entry section
+- Save button updates existing entry when editing
+- Added Cancel Edit button
+Previous Version: v0.2.2
 -->
 
 <!DOCTYPE html>
@@ -251,6 +253,18 @@ Previous Version: v0.2.1
       letter-spacing: 0.4px;
     }
 
+    .edit-banner {
+      display: none;
+      background: #fff7e6;
+      border: 1px solid #ffd591;
+      color: #7a4b00;
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      font-weight: 800;
+      text-align: center;
+    }
+
     .manual-options {
       display: grid;
       grid-template-columns: 1fr 1fr 1.3fr;
@@ -281,6 +295,10 @@ Previous Version: v0.2.1
     .save-row {
       text-align: center;
       margin-top: 24px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
     table {
@@ -326,12 +344,23 @@ Previous Version: v0.2.1
       padding: 24px;
     }
 
+    .row-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
     .small-btn {
       padding: 8px 10px;
       font-size: 0.85rem;
       background: white;
+      border: 1px solid var(--border);
+      color: var(--blue);
+    }
+
+    .small-btn.danger {
       color: var(--red);
-      border: 1px solid #f0b8b4;
+      border-color: #f0b8b4;
     }
 
     .modal-note {
@@ -416,9 +445,13 @@ Previous Version: v0.2.1
       </p>
     </section>
 
-    <section class="card">
+    <section class="card" id="manualEntryCard">
       <div class="section-title">
         <h2>⏱ Manual Time Entry</h2>
+      </div>
+
+      <div class="edit-banner" id="editBanner">
+        Editing existing time entry
       </div>
 
       <div class="form-grid">
@@ -477,7 +510,8 @@ Previous Version: v0.2.1
       </div>
 
       <div class="save-row">
-        <button class="btn-primary" onclick="saveManualEntry()">💾 Save Manual Entry</button>
+        <button class="btn-primary" id="manualSaveBtn" onclick="saveManualEntry()">💾 Save Manual Entry</button>
+        <button class="btn-secondary" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">Cancel Edit</button>
       </div>
     </section>
 
@@ -491,12 +525,13 @@ Previous Version: v0.2.1
     </section>
 
     <p class="modal-note">
-      v0.2.2 saves entries locally in this browser. Supabase login and team sync come later.
+      v0.3a saves entries locally in this browser. Supabase login and team sync come later.
     </p>
   </main>
 
   <script>
     const STORAGE_KEY = "meridian_time_entries_v02";
+    let editingEntryId = null;
 
     const projects = [
       "Milliken OT Assessment",
@@ -602,6 +637,8 @@ Previous Version: v0.2.1
         notes: document.getElementById("timerNotes").value.trim(),
         startTime: formatTimeForDisplay(timerStartDateTime),
         endTime: formatTimeForDisplay(endDateTime),
+        rawStartTime: timeInputFromDate(timerStartDateTime),
+        rawEndTime: timeInputFromDate(endDateTime),
         durationHours,
         entryType: "Timer",
         createdAt: new Date().toISOString()
@@ -629,6 +666,8 @@ Previous Version: v0.2.1
 
       let startTime = "";
       let endTime = "";
+      let rawStartTime = "";
+      let rawEndTime = "";
       let durationHours = 0;
 
       if (!date) {
@@ -637,20 +676,23 @@ Previous Version: v0.2.1
       }
 
       if (mode === "range") {
-        startTime = document.getElementById("startTime").value;
-        endTime = document.getElementById("endTime").value;
+        rawStartTime = document.getElementById("startTime").value;
+        rawEndTime = document.getElementById("endTime").value;
 
-        if (!startTime || !endTime) {
+        if (!rawStartTime || !rawEndTime) {
           alert("Please enter both start time and end time.");
           return;
         }
 
-        durationHours = calculateHoursFromTimes(startTime, endTime);
+        durationHours = calculateHoursFromTimes(rawStartTime, rawEndTime);
 
         if (durationHours <= 0) {
           alert("End time must be after start time for now.");
           return;
         }
+
+        startTime = formatTimeInputForDisplay(rawStartTime);
+        endTime = formatTimeInputForDisplay(rawEndTime);
       }
 
       if (mode === "hours") {
@@ -662,30 +704,111 @@ Previous Version: v0.2.1
         }
       }
 
-      const entry = {
-        id: crypto.randomUUID(),
-        date,
-        project,
-        taskType,
-        notes,
-        startTime: mode === "range" ? formatTimeInputForDisplay(startTime) : "",
-        endTime: mode === "range" ? formatTimeInputForDisplay(endTime) : "",
-        durationHours,
-        entryType: "Manual",
-        createdAt: new Date().toISOString()
-      };
-
       const entries = getEntries();
-      entries.push(entry);
-      saveEntries(entries);
 
+      if (editingEntryId) {
+        const updatedEntries = entries.map(entry => {
+          if (entry.id !== editingEntryId) return entry;
+
+          return {
+            ...entry,
+            date,
+            project,
+            taskType,
+            notes,
+            startTime,
+            endTime,
+            rawStartTime,
+            rawEndTime,
+            durationHours,
+            entryType: entry.entryType || "Manual",
+            updatedAt: new Date().toISOString()
+          };
+        });
+
+        saveEntries(updatedEntries);
+        alert("Time entry updated.");
+        cancelEdit(false);
+      } else {
+        const entry = {
+          id: crypto.randomUUID(),
+          date,
+          project,
+          taskType,
+          notes,
+          startTime,
+          endTime,
+          rawStartTime,
+          rawEndTime,
+          durationHours,
+          entryType: "Manual",
+          createdAt: new Date().toISOString()
+        };
+
+        entries.push(entry);
+        saveEntries(entries);
+        clearManualForm();
+        alert("Manual time entry saved.");
+      }
+
+      renderEntries();
+    }
+
+    function editEntry(id) {
+      const entry = getEntries().find(item => item.id === id);
+
+      if (!entry) {
+        alert("Could not find that entry.");
+        return;
+      }
+
+      editingEntryId = id;
+
+      document.getElementById("manualDate").value = entry.date;
+      document.getElementById("manualProject").value = entry.project;
+      document.getElementById("manualTaskType").value = entry.taskType;
+      document.getElementById("manualNotes").value = entry.notes || "";
+
+      if (entry.rawStartTime && entry.rawEndTime) {
+        document.querySelector("input[name='entryMode'][value='range']").checked = true;
+        document.getElementById("startTime").value = entry.rawStartTime;
+        document.getElementById("endTime").value = entry.rawEndTime;
+        document.getElementById("manualHours").value = "";
+      } else {
+        document.querySelector("input[name='entryMode'][value='hours']").checked = true;
+        document.getElementById("startTime").value = "";
+        document.getElementById("endTime").value = "";
+        document.getElementById("manualHours").value = Number(entry.durationHours || 0).toFixed(2);
+      }
+
+      document.getElementById("editBanner").style.display = "block";
+      document.getElementById("manualSaveBtn").textContent = "💾 Update Time Entry";
+      document.getElementById("cancelEditBtn").style.display = "inline-block";
+
+      document.getElementById("manualEntryCard").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function cancelEdit(shouldClear = true) {
+      editingEntryId = null;
+
+      document.getElementById("editBanner").style.display = "none";
+      document.getElementById("manualSaveBtn").textContent = "💾 Save Manual Entry";
+      document.getElementById("cancelEditBtn").style.display = "none";
+
+      if (shouldClear) {
+        clearManualForm();
+      }
+    }
+
+    function clearManualForm() {
+      document.getElementById("manualDate").value = getLocalDateString(new Date());
+      document.getElementById("manualProject").value = projects[0];
+      document.getElementById("manualTaskType").value = taskTypes[0];
+      document.querySelector("input[name='entryMode'][value='range']").checked = true;
       document.getElementById("startTime").value = "";
       document.getElementById("endTime").value = "";
       document.getElementById("manualHours").value = "";
       document.getElementById("manualNotes").value = "";
-
-      renderEntries();
-      alert("Manual time entry saved.");
     }
 
     function calculateHoursFromTimes(start, end) {
@@ -711,6 +834,11 @@ Previous Version: v0.2.1
 
       const entries = getEntries().filter(entry => entry.id !== id);
       saveEntries(entries);
+
+      if (editingEntryId === id) {
+        cancelEdit();
+      }
+
       renderEntries();
     }
 
@@ -740,7 +868,7 @@ Previous Version: v0.2.1
               <th>Notes</th>
               <th>Duration</th>
               <th>Type</th>
-              <th></th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -757,7 +885,10 @@ Previous Version: v0.2.1
                   </span>
                 </td>
                 <td>
-                  <button class="small-btn" onclick="deleteEntry('${entry.id}')">Delete</button>
+                  <div class="row-actions">
+                    <button class="small-btn" onclick="editEntry('${entry.id}')">Edit</button>
+                    <button class="small-btn danger" onclick="deleteEntry('${entry.id}')">Delete</button>
+                  </div>
                 </td>
               </tr>
             `).join("")}
@@ -785,6 +916,13 @@ Previous Version: v0.2.1
       return formatTimeForDisplay(date);
     }
 
+    function timeInputFromDate(date) {
+      if (!date) return "";
+      const hour = String(date.getHours()).padStart(2, "0");
+      const minute = String(date.getMinutes()).padStart(2, "0");
+      return `${hour}:${minute}`;
+    }
+
     function escapeHtml(value) {
       return String(value)
         .replaceAll("&", "&amp;")
@@ -796,11 +934,9 @@ Previous Version: v0.2.1
 
     function init() {
       populateSelects();
+      clearManualForm();
 
-      const today = getLocalDateString(new Date());
-      document.getElementById("manualDate").value = today;
       document.getElementById("timerStartedAt").textContent = "Started at: —";
-
       updateTimerDisplay();
       renderEntries();
     }
