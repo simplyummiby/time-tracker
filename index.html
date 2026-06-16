@@ -1,11 +1,13 @@
 <!--
 Meridian ITP Time Tracker
-Version: v0.3a.6
+Version: v0.3b
 Date: 2026-06-16
 Changes:
-- Centered Hours / Minutes / Seconds labels over timer more cleanly
-- Removed timer number shadow/glow
-Previous Version: v0.3a.5
+- Added Reports modal
+- Added Project and Task Type filters in reports
+- Added summary cards for total hours, entries, and projects
+- Added bar-style totals with hrs labels
+Previous Version: v0.3a.6
 -->
 
 <!DOCTYPE html>
@@ -198,12 +200,8 @@ Previous Version: v0.3a.5
     }
 
     @keyframes gentleBreath {
-      0%, 100% {
-        box-shadow: 0 0 0 rgba(31, 157, 69, 0);
-      }
-      50% {
-        box-shadow: 0 0 16px rgba(31, 157, 69, 0.14);
-      }
+      0%, 100% { box-shadow: 0 0 0 rgba(31, 157, 69, 0); }
+      50% { box-shadow: 0 0 16px rgba(31, 157, 69, 0.14); }
     }
 
     .status-dot {
@@ -247,9 +245,7 @@ Previous Version: v0.3a.5
       text-align: center;
     }
 
-    .timer-started strong {
-      color: var(--text);
-    }
+    .timer-started strong { color: var(--text); }
 
     .timer-actions {
       display: grid;
@@ -439,6 +435,194 @@ Previous Version: v0.3a.5
       font-size: 0.9rem;
     }
 
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 27, 58, 0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      width: min(980px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      background: white;
+      border-radius: 22px;
+      box-shadow: 0 24px 60px rgba(6, 27, 58, 0.30);
+      border: 1px solid var(--border);
+    }
+
+    .modal-header {
+      padding: 24px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      color: var(--text);
+      font-size: 1.4rem;
+    }
+
+    .modal-header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .close-btn {
+      padding: 10px 14px;
+      background: white;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .modal-body {
+      padding: 26px 28px 30px;
+      display: grid;
+      gap: 24px;
+    }
+
+    .report-filters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      background: #f8fbff;
+      border: 1px solid #dce7f7;
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .report-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .summary-card {
+      background: linear-gradient(180deg, #ffffff, #f8fbff);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .summary-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .summary-card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 2rem;
+      color: var(--navy);
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    .report-box {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      background: white;
+    }
+
+    .report-box h3 {
+      margin: 0 0 16px;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(120px, 1.2fr) minmax(140px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid #eef2f7;
+    }
+
+    .bar-row:last-child { border-bottom: 0; }
+
+    .bar-label {
+      font-weight: 800;
+      color: var(--text);
+      overflow-wrap: anywhere;
+    }
+
+    .bar-track {
+      height: 12px;
+      background: #edf3ff;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--blue);
+      border-radius: 999px;
+      min-width: 6px;
+    }
+
+    .bar-value {
+      font-weight: 900;
+      color: var(--navy);
+      white-space: nowrap;
+    }
+
+    .recent-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .recent-item {
+      border: 1px solid #eef2f7;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fbfdff;
+    }
+
+    .recent-item strong {
+      display: block;
+      color: var(--text);
+    }
+
+    .recent-item span {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .modal-footer {
+      border-top: 1px solid var(--border);
+      padding: 18px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
     @media (max-width: 850px) {
       header {
         align-items: flex-start;
@@ -447,7 +631,10 @@ Previous Version: v0.3a.5
 
       .form-grid,
       .manual-options,
-      .timer-actions {
+      .timer-actions,
+      .report-filters,
+      .report-summary,
+      .report-grid {
         grid-template-columns: 1fr;
       }
 
@@ -456,14 +643,16 @@ Previous Version: v0.3a.5
         font-size: 0.76rem;
       }
 
-      .timer-time {
-        letter-spacing: 3px;
-      }
+      .timer-time { letter-spacing: 3px; }
 
       table {
         display: block;
         overflow-x: auto;
         white-space: nowrap;
+      }
+
+      .bar-row {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -481,7 +670,7 @@ Previous Version: v0.3a.5
 
     <div class="top-actions">
       <button class="nav-btn" onclick="alert('Timesheet modal coming soon.')">📅 Timesheet</button>
-      <button class="nav-btn" onclick="alert('Reports modal coming soon.')">📊 Reports</button>
+      <button class="nav-btn" onclick="openReportsModal()">📊 Reports</button>
       <button class="nav-btn" onclick="alert('Projects will later pull from Coda.')">📁 Projects</button>
       <button class="nav-btn" onclick="alert('Settings coming soon.')">⚙️ Settings</button>
     </div>
@@ -623,9 +812,74 @@ Previous Version: v0.3a.5
     </section>
 
     <p class="modal-note">
-      v0.3a.6 saves entries locally in this browser. Supabase login and team sync come later.
+      v0.3b saves entries locally in this browser. Supabase login and team sync come later.
     </p>
   </main>
+
+  <div class="modal-backdrop" id="reportsBackdrop" onclick="handleBackdropClick(event)">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="reportsTitle">
+      <div class="modal-header">
+        <div>
+          <h2 id="reportsTitle">📊 Reports</h2>
+          <p>Track time across projects and task types.</p>
+        </div>
+        <button class="close-btn" onclick="closeReportsModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="report-filters">
+          <div>
+            <label for="reportProjectFilter">Project Filter</label>
+            <select id="reportProjectFilter" onchange="renderReports()"></select>
+          </div>
+
+          <div>
+            <label for="reportTaskFilter">Task Type Filter</label>
+            <select id="reportTaskFilter" onchange="renderReports()"></select>
+          </div>
+        </div>
+
+        <div class="report-summary">
+          <div class="summary-card">
+            <span>Total Hours</span>
+            <strong id="reportTotalHours">0.00</strong>
+          </div>
+
+          <div class="summary-card">
+            <span>Total Entries</span>
+            <strong id="reportTotalEntries">0</strong>
+          </div>
+
+          <div class="summary-card">
+            <span>Projects</span>
+            <strong id="reportTotalProjects">0</strong>
+          </div>
+        </div>
+
+        <div class="report-grid">
+          <div class="report-box">
+            <h3 id="projectReportTitle">Hours by Project</h3>
+            <div id="projectReportRows"></div>
+          </div>
+
+          <div class="report-box">
+            <h3 id="taskReportTitle">Hours by Task Type</h3>
+            <div id="taskReportRows"></div>
+          </div>
+        </div>
+
+        <div class="report-box">
+          <h3>Most Recent Entries</h3>
+          <div class="recent-list" id="recentReportRows"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span>Export features coming soon.</span>
+        <button class="btn-secondary" onclick="closeReportsModal()">Close</button>
+      </div>
+    </section>
+  </div>
 
   <script>
     const STORAGE_KEY = "meridian_time_entries_v02";
@@ -1006,6 +1260,135 @@ Previous Version: v0.3a.5
           </tbody>
         </table>
       `;
+    }
+
+    function openReportsModal() {
+      populateReportFilters();
+      renderReports();
+      document.getElementById("reportsBackdrop").classList.add("show");
+    }
+
+    function closeReportsModal() {
+      document.getElementById("reportsBackdrop").classList.remove("show");
+    }
+
+    function handleBackdropClick(event) {
+      if (event.target.id === "reportsBackdrop") {
+        closeReportsModal();
+      }
+    }
+
+    function populateReportFilters() {
+      const projectFilter = document.getElementById("reportProjectFilter");
+      const taskFilter = document.getElementById("reportTaskFilter");
+
+      const entries = getEntries();
+      const entryProjects = [...new Set(entries.map(entry => entry.project).filter(Boolean))];
+      const entryTasks = [...new Set(entries.map(entry => entry.taskType).filter(Boolean))];
+
+      const allProjects = [...new Set([...projects, ...entryProjects])];
+      const allTasks = [...new Set([...taskTypes, ...entryTasks])];
+
+      const currentProject = projectFilter.value || "All Projects";
+      const currentTask = taskFilter.value || "All Task Types";
+
+      projectFilter.innerHTML = `
+        <option>All Projects</option>
+        ${allProjects.map(project => `<option>${escapeHtml(project)}</option>`).join("")}
+      `;
+
+      taskFilter.innerHTML = `
+        <option>All Task Types</option>
+        ${allTasks.map(task => `<option>${escapeHtml(task)}</option>`).join("")}
+      `;
+
+      projectFilter.value = allProjects.includes(currentProject) ? currentProject : "All Projects";
+      taskFilter.value = allTasks.includes(currentTask) ? currentTask : "All Task Types";
+    }
+
+    function renderReports() {
+      const selectedProject = document.getElementById("reportProjectFilter").value;
+      const selectedTask = document.getElementById("reportTaskFilter").value;
+
+      const filteredEntries = getEntries().filter(entry => {
+        const projectMatch = selectedProject === "All Projects" || entry.project === selectedProject;
+        const taskMatch = selectedTask === "All Task Types" || entry.taskType === selectedTask;
+        return projectMatch && taskMatch;
+      });
+
+      const totalHours = filteredEntries.reduce((sum, entry) => sum + Number(entry.durationHours || 0), 0);
+      const projectCount = new Set(filteredEntries.map(entry => entry.project)).size;
+
+      document.getElementById("reportTotalHours").textContent = totalHours.toFixed(2);
+      document.getElementById("reportTotalEntries").textContent = filteredEntries.length;
+      document.getElementById("reportTotalProjects").textContent = projectCount;
+
+      document.getElementById("projectReportTitle").textContent =
+        selectedTask === "All Task Types" ? "Hours by Project" : `Projects with ${selectedTask}`;
+
+      document.getElementById("taskReportTitle").textContent =
+        selectedProject === "All Projects" ? "Hours by Task Type" : `Tasks Logged for ${selectedProject}`;
+
+      renderBarReport("projectReportRows", groupHours(filteredEntries, "project"));
+      renderBarReport("taskReportRows", groupHours(filteredEntries, "taskType"));
+      renderRecentReport(filteredEntries);
+    }
+
+    function groupHours(entries, key) {
+      const totals = {};
+
+      entries.forEach(entry => {
+        const label = entry[key] || "Uncategorized";
+        totals[label] = (totals[label] || 0) + Number(entry.durationHours || 0);
+      });
+
+      return Object.entries(totals)
+        .map(([label, hours]) => ({ label, hours }))
+        .sort((a, b) => b.hours - a.hours);
+    }
+
+    function renderBarReport(containerId, rows) {
+      const container = document.getElementById(containerId);
+
+      if (!rows.length) {
+        container.innerHTML = `<div class="empty">No report data for this filter.</div>`;
+        return;
+      }
+
+      const maxHours = Math.max(...rows.map(row => row.hours));
+
+      container.innerHTML = rows.map(row => {
+        const percent = maxHours > 0 ? Math.max((row.hours / maxHours) * 100, 4) : 0;
+
+        return `
+          <div class="bar-row">
+            <div class="bar-label">${escapeHtml(row.label)}</div>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${percent}%"></div>
+            </div>
+            <div class="bar-value">${row.hours.toFixed(2)} hrs</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderRecentReport(entries) {
+      const container = document.getElementById("recentReportRows");
+      const recent = [...entries]
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, 5);
+
+      if (!recent.length) {
+        container.innerHTML = `<div class="empty">No recent entries for this filter.</div>`;
+        return;
+      }
+
+      container.innerHTML = recent.map(entry => `
+        <div class="recent-item">
+          <strong>${escapeHtml(entry.project)} — ${Number(entry.durationHours).toFixed(2)} hrs</strong>
+          <span>${escapeHtml(entry.date)} • ${escapeHtml(entry.taskType)} • ${escapeHtml(entry.entryType)}</span>
+        </div>
+      `).join("");
     }
 
     function getLocalDateString(date) {
