@@ -1,11 +1,11 @@
 <!--
 Meridian ITP Time Tracker
-Version: v0.3a.2
+Version: v0.3a.3
 Date: 2026-06-16
 Changes:
-- Added consistent section heading for Timer Entry
-- Added icon to Today's Entries heading
-Previous Version: v0.3a.1
+- Added shadow to all buttons
+- Added hover and pressed feedback to all buttons
+Previous Version: v0.3a.2
 -->
 
 <!DOCTYPE html>
@@ -206,6 +206,20 @@ Previous Version: v0.3a.1
       font-size: 1rem;
       font-weight: 800;
       cursor: pointer;
+      box-shadow: 0 6px 14px rgba(10, 31, 68, 0.14);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 9px 18px rgba(10, 31, 68, 0.18);
+      filter: brightness(1.02);
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 3px 8px rgba(10, 31, 68, 0.16);
+      filter: brightness(0.97);
     }
 
     .btn-primary {
@@ -526,7 +540,7 @@ Previous Version: v0.3a.1
     </section>
 
     <p class="modal-note">
-      v0.3a.2 saves entries locally in this browser. Supabase login and team sync come later.
+      v0.3a.3 saves entries locally in this browser. Supabase login and team sync come later.
     </p>
   </main>
 
