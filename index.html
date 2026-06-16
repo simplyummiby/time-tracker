@@ -1,9 +1,15 @@
 <!--
 Meridian ITP Time Tracker
-Version: v0.1
+Version: v0.2
 Date: 2026-06-16
-Changes: Initial static layout with timer card, manual time entry, today's entries, and modal buttons.
-Previous Version: None
+Changes:
+- Added working Start/Pause/Stop timer
+- Added save timer entry
+- Added manual time entry save
+- Added today's entries rendered from localStorage
+- Added delete entry
+- Added daily total calculation
+Previous Version: v0.1
 -->
 
 <!DOCTYPE html>
@@ -30,9 +36,7 @@ Previous Version: None
       --radius: 18px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -164,9 +168,7 @@ Previous Version: None
       resize: vertical;
     }
 
-    .full {
-      grid-column: 1 / -1;
-    }
+    .full { grid-column: 1 / -1; }
 
     .timer-display {
       text-align: center;
@@ -181,15 +183,12 @@ Previous Version: None
       line-height: 1;
     }
 
-    .timer-labels {
-      display: flex;
-      justify-content: center;
-      gap: 78px;
+    .timer-status {
       margin-top: 10px;
       color: var(--muted);
-      font-weight: 700;
-      font-size: 0.8rem;
+      font-weight: 800;
       text-transform: uppercase;
+      font-size: 0.78rem;
     }
 
     .timer-actions {
@@ -201,7 +200,6 @@ Previous Version: None
     }
 
     button {
-      border: 0;
       border-radius: 10px;
       padding: 14px 18px;
       font-size: 1rem;
@@ -212,6 +210,7 @@ Previous Version: None
     .btn-primary {
       background: var(--blue);
       color: white;
+      border: 1px solid var(--blue);
     }
 
     .btn-secondary {
@@ -268,9 +267,7 @@ Previous Version: None
       font-size: 0.95rem;
     }
 
-    .radio-label input {
-      width: auto;
-    }
+    .radio-label input { width: auto; }
 
     .time-row {
       display: grid;
@@ -290,11 +287,11 @@ Previous Version: None
       font-size: 0.95rem;
     }
 
-    th,
-    td {
+    th, td {
       padding: 14px 12px;
       border-bottom: 1px solid var(--border);
       text-align: left;
+      vertical-align: top;
     }
 
     th {
@@ -321,24 +318,18 @@ Previous Version: None
       color: #6941c6;
     }
 
-    .badge-running {
-      background: #e8f7ed;
-      color: var(--green);
-    }
-
-    .running-row {
-      background: #f0fbf3;
-    }
-
-    .entry-footer {
+    .empty {
+      color: var(--muted);
       text-align: center;
-      padding-top: 18px;
+      padding: 24px;
     }
 
-    .link-btn {
-      background: transparent;
-      color: var(--blue);
-      padding: 8px;
+    .small-btn {
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      background: white;
+      color: var(--red);
+      border: 1px solid #f0b8b4;
     }
 
     .modal-note {
@@ -357,10 +348,6 @@ Previous Version: None
       .manual-options,
       .timer-actions {
         grid-template-columns: 1fr;
-      }
-
-      .timer-labels {
-        gap: 28px;
       }
 
       table {
@@ -383,10 +370,10 @@ Previous Version: None
     </div>
 
     <div class="top-actions">
-      <button class="nav-btn">📅 Timesheet</button>
-      <button class="nav-btn">📊 Reports</button>
-      <button class="nav-btn">📁 Projects</button>
-      <button class="nav-btn">⚙️ Settings</button>
+      <button class="nav-btn" onclick="alert('Timesheet modal coming soon.')">📅 Timesheet</button>
+      <button class="nav-btn" onclick="alert('Reports modal coming soon.')">📊 Reports</button>
+      <button class="nav-btn" onclick="alert('Projects will later pull from Coda.')">📁 Projects</button>
+      <button class="nav-btn" onclick="alert('Settings coming soon.')">⚙️ Settings</button>
     </div>
   </header>
 
@@ -395,27 +382,12 @@ Previous Version: None
       <div class="form-grid">
         <div>
           <label for="project">Project</label>
-          <select id="project">
-            <option>Milliken OT Assessment</option>
-            <option>Apex Controls</option>
-            <option>Internal Development</option>
-          </select>
+          <select id="project"></select>
         </div>
 
         <div>
           <label for="taskType">Task Type</label>
-          <select id="taskType">
-            <option>Assessment Work</option>
-            <option>Remediation Design</option>
-            <option>Remediation Support</option>
-            <option>Project Management</option>
-            <option>Proposal Development</option>
-            <option>Business Development</option>
-            <option>Internal Administration</option>
-            <option>Travel</option>
-            <option>Meetings</option>
-            <option>Training</option>
-          </select>
+          <select id="taskType"></select>
         </div>
 
         <div class="full">
@@ -425,18 +397,14 @@ Previous Version: None
       </div>
 
       <div class="timer-display">
-        <div class="time">02:14:36</div>
-        <div class="timer-labels">
-          <span>Hours</span>
-          <span>Minutes</span>
-          <span>Seconds</span>
-        </div>
+        <div class="time" id="timerDisplay">00:00:00</div>
+        <div class="timer-status" id="timerStatus">Ready</div>
       </div>
 
       <div class="timer-actions">
-        <button class="btn-primary">▶ Start</button>
-        <button class="btn-secondary">Ⅱ Pause</button>
-        <button class="btn-danger">■ Stop</button>
+        <button class="btn-primary" onclick="startTimer()">▶ Start</button>
+        <button class="btn-secondary" onclick="pauseTimer()">Ⅱ Pause</button>
+        <button class="btn-danger" onclick="stopTimer()">■ Stop & Save</button>
       </div>
 
       <p class="helper-text">
@@ -458,34 +426,19 @@ Previous Version: None
 
         <div>
           <label for="manualProject">Project</label>
-          <select id="manualProject">
-            <option>Milliken OT Assessment</option>
-            <option>Apex Controls</option>
-            <option>Internal Development</option>
-          </select>
+          <select id="manualProject"></select>
         </div>
 
         <div>
           <label for="manualTaskType">Task Type</label>
-          <select id="manualTaskType">
-            <option>Assessment Work</option>
-            <option>Remediation Design</option>
-            <option>Remediation Support</option>
-            <option>Project Management</option>
-            <option>Proposal Development</option>
-            <option>Business Development</option>
-            <option>Internal Administration</option>
-            <option>Travel</option>
-            <option>Meetings</option>
-            <option>Training</option>
-          </select>
+          <select id="manualTaskType"></select>
         </div>
       </div>
 
       <div class="manual-options" style="margin-top: 24px;">
         <div>
           <label class="radio-label">
-            <input type="radio" name="entryMode" checked />
+            <input type="radio" name="entryMode" value="range" checked />
             Start Time / End Time
           </label>
 
@@ -506,7 +459,7 @@ Previous Version: None
 
         <div>
           <label class="radio-label">
-            <input type="radio" name="entryMode" />
+            <input type="radio" name="entryMode" value="hours" />
             Total Hours
           </label>
 
@@ -521,78 +474,320 @@ Previous Version: None
       </div>
 
       <div class="save-row">
-        <button class="btn-primary">💾 Save Entry</button>
+        <button class="btn-primary" onclick="saveManualEntry()">💾 Save Manual Entry</button>
       </div>
     </section>
 
     <section class="card">
       <div class="section-title">
         <h2>Today's Entries</h2>
-        <strong>Total: 4.75 hrs</strong>
+        <strong id="dailyTotal">Total: 0.00 hrs</strong>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Project</th>
-            <th>Task Type</th>
-            <th>Notes</th>
-            <th>Duration</th>
-            <th>Type</th>
-            <th></th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr>
-            <td>8:00 AM - 9:15 AM</td>
-            <td>Milliken OT Assessment</td>
-            <td>Assessment Work</td>
-            <td>Data gathering and site review</td>
-            <td>1.25 hrs</td>
-            <td><span class="badge badge-timer">Timer</span></td>
-            <td>⋯</td>
-          </tr>
-
-          <tr>
-            <td>9:30 AM - 10:00 AM</td>
-            <td>Milliken OT Assessment</td>
-            <td>Meetings</td>
-            <td>Daily stand-up</td>
-            <td>0.50 hrs</td>
-            <td><span class="badge badge-manual">Manual</span></td>
-            <td>⋯</td>
-          </tr>
-
-          <tr class="running-row">
-            <td>10:15 AM -</td>
-            <td>Milliken OT Assessment</td>
-            <td>Assessment Work</td>
-            <td>Network walkthrough</td>
-            <td><strong>2.14 hrs</strong></td>
-            <td><span class="badge badge-running">Running</span></td>
-            <td>⋯</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="entry-footer">
-        <button class="link-btn">＋ Add Manual Time Entry</button>
-      </div>
+      <div id="entriesContainer"></div>
     </section>
 
     <p class="modal-note">
-      Timesheet, Reports, Projects, and Settings will open as modals in later versions.
+      v0.2 saves entries locally in this browser. Supabase login and team sync come later.
     </p>
   </main>
 
   <script>
-    // v0.1 static layout only.
-    // Timer, manual entries, login, Supabase, and Coda sync will be added in later versions.
+    const STORAGE_KEY = "meridian_time_entries_v02";
 
-    const today = new Date().toISOString().split("T")[0];
-    document.getElementById("manualDate").value = today;
+    const projects = [
+      "Milliken OT Assessment",
+      "Apex Controls",
+      "Internal Development"
+    ];
+
+    const taskTypes = [
+      "Assessment Work",
+      "Remediation Design",
+      "Remediation Support",
+      "Project Management",
+      "Proposal Development",
+      "Business Development",
+      "Internal Administration",
+      "Travel",
+      "Meetings",
+      "Training"
+    ];
+
+    let timerInterval = null;
+    let elapsedSeconds = 0;
+    let timerRunning = false;
+    let timerStartDateTime = null;
+
+    function populateSelects() {
+      const projectSelects = [document.getElementById("project"), document.getElementById("manualProject")];
+      const taskSelects = [document.getElementById("taskType"), document.getElementById("manualTaskType")];
+
+      projectSelects.forEach(select => {
+        select.innerHTML = projects.map(project => `<option>${project}</option>`).join("");
+      });
+
+      taskSelects.forEach(select => {
+        select.innerHTML = taskTypes.map(task => `<option>${task}</option>`).join("");
+      });
+    }
+
+    function formatSeconds(seconds) {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+
+      return [h, m, s].map(unit => String(unit).padStart(2, "0")).join(":");
+    }
+
+    function updateTimerDisplay() {
+      document.getElementById("timerDisplay").textContent = formatSeconds(elapsedSeconds);
+    }
+
+    function startTimer() {
+      if (timerRunning) return;
+
+      if (!timerStartDateTime) {
+        timerStartDateTime = new Date();
+      }
+
+      timerRunning = true;
+      document.getElementById("timerStatus").textContent = "Running";
+
+      timerInterval = setInterval(() => {
+        elapsedSeconds++;
+        updateTimerDisplay();
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      if (!timerRunning) return;
+
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerRunning = false;
+      document.getElementById("timerStatus").textContent = "Paused";
+    }
+
+    function stopTimer() {
+      if (elapsedSeconds <= 0) {
+        alert("Start the timer before saving a timer entry.");
+        return;
+      }
+
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerRunning = false;
+
+      const endDateTime = new Date();
+      const durationHours = elapsedSeconds / 3600;
+
+      const entry = {
+        id: crypto.randomUUID(),
+        date: getDateString(timerStartDateTime || new Date()),
+        project: document.getElementById("project").value,
+        taskType: document.getElementById("taskType").value,
+        notes: document.getElementById("timerNotes").value.trim(),
+        startTime: formatTimeForDisplay(timerStartDateTime),
+        endTime: formatTimeForDisplay(endDateTime),
+        durationHours,
+        entryType: "Timer",
+        createdAt: new Date().toISOString()
+      };
+
+      const entries = getEntries();
+      entries.push(entry);
+      saveEntries(entries);
+
+      elapsedSeconds = 0;
+      timerStartDateTime = null;
+      document.getElementById("timerNotes").value = "";
+      document.getElementById("timerStatus").textContent = "Saved";
+      updateTimerDisplay();
+      renderEntries();
+    }
+
+    function saveManualEntry() {
+      const date = document.getElementById("manualDate").value;
+      const project = document.getElementById("manualProject").value;
+      const taskType = document.getElementById("manualTaskType").value;
+      const notes = document.getElementById("manualNotes").value.trim();
+      const mode = document.querySelector("input[name='entryMode']:checked").value;
+
+      let startTime = "";
+      let endTime = "";
+      let durationHours = 0;
+
+      if (!date) {
+        alert("Please select a date.");
+        return;
+      }
+
+      if (mode === "range") {
+        startTime = document.getElementById("startTime").value;
+        endTime = document.getElementById("endTime").value;
+
+        if (!startTime || !endTime) {
+          alert("Please enter both start time and end time.");
+          return;
+        }
+
+        durationHours = calculateHoursFromTimes(startTime, endTime);
+
+        if (durationHours <= 0) {
+          alert("End time must be after start time for now.");
+          return;
+        }
+      }
+
+      if (mode === "hours") {
+        durationHours = Number(document.getElementById("manualHours").value);
+
+        if (!durationHours || durationHours <= 0) {
+          alert("Please enter total hours.");
+          return;
+        }
+      }
+
+      const entry = {
+        id: crypto.randomUUID(),
+        date,
+        project,
+        taskType,
+        notes,
+        startTime: mode === "range" ? formatTimeInputForDisplay(startTime) : "",
+        endTime: mode === "range" ? formatTimeInputForDisplay(endTime) : "",
+        durationHours,
+        entryType: "Manual",
+        createdAt: new Date().toISOString()
+      };
+
+      const entries = getEntries();
+      entries.push(entry);
+      saveEntries(entries);
+
+      document.getElementById("startTime").value = "";
+      document.getElementById("endTime").value = "";
+      document.getElementById("manualHours").value = "";
+      document.getElementById("manualNotes").value = "";
+
+      renderEntries();
+    }
+
+    function calculateHoursFromTimes(start, end) {
+      const [startH, startM] = start.split(":").map(Number);
+      const [endH, endM] = end.split(":").map(Number);
+
+      const startMinutes = startH * 60 + startM;
+      const endMinutes = endH * 60 + endM;
+
+      return (endMinutes - startMinutes) / 60;
+    }
+
+    function getEntries() {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    }
+
+    function saveEntries(entries) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }
+
+    function deleteEntry(id) {
+      if (!confirm("Delete this time entry?")) return;
+
+      const entries = getEntries().filter(entry => entry.id !== id);
+      saveEntries(entries);
+      renderEntries();
+    }
+
+    function renderEntries() {
+      const container = document.getElementById("entriesContainer");
+      const today = getDateString(new Date());
+
+      const todaysEntries = getEntries()
+        .filter(entry => entry.date === today)
+        .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+      const total = todaysEntries.reduce((sum, entry) => sum + Number(entry.durationHours || 0), 0);
+      document.getElementById("dailyTotal").textContent = `Total: ${total.toFixed(2)} hrs`;
+
+      if (todaysEntries.length === 0) {
+        container.innerHTML = `<div class="empty">No time entries saved for today yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Project</th>
+              <th>Task Type</th>
+              <th>Notes</th>
+              <th>Duration</th>
+              <th>Type</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${todaysEntries.map(entry => `
+              <tr>
+                <td>${entry.startTime && entry.endTime ? `${entry.startTime} - ${entry.endTime}` : "Manual total"}</td>
+                <td>${escapeHtml(entry.project)}</td>
+                <td>${escapeHtml(entry.taskType)}</td>
+                <td>${escapeHtml(entry.notes || "—")}</td>
+                <td>${Number(entry.durationHours).toFixed(2)} hrs</td>
+                <td>
+                  <span class="badge ${entry.entryType === "Timer" ? "badge-timer" : "badge-manual"}">
+                    ${entry.entryType}
+                  </span>
+                </td>
+                <td>
+                  <button class="small-btn" onclick="deleteEntry('${entry.id}')">Delete</button>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function getDateString(date) {
+      return date.toISOString().split("T")[0];
+    }
+
+    function formatTimeForDisplay(date) {
+      if (!date) return "";
+      return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    }
+
+    function formatTimeInputForDisplay(timeValue) {
+      const [hour, minute] = timeValue.split(":");
+      const date = new Date();
+      date.setHours(Number(hour), Number(minute), 0, 0);
+      return formatTimeForDisplay(date);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function init() {
+      populateSelects();
+
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("manualDate").value = today;
+
+      updateTimerDisplay();
+      renderEntries();
+    }
+
+    init();
   </script>
 </body>
 </html>
