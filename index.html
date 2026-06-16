@@ -1,11 +1,11 @@
 <!--
 Meridian ITP Time Tracker
-Version: v0.2.1
+Version: v0.2.2
 Date: 2026-06-16
 Changes:
-- Added "Started at" display under the main timer
-- Timer start time now resets after Stop & Save
-Previous Version: v0.2
+- Fixed manual entries not showing in Today's Entries by using local date matching
+- Added manual entry saved confirmation
+Previous Version: v0.2.1
 -->
 
 <!DOCTYPE html>
@@ -491,7 +491,7 @@ Previous Version: v0.2
     </section>
 
     <p class="modal-note">
-      v0.2.1 saves entries locally in this browser. Supabase login and team sync come later.
+      v0.2.2 saves entries locally in this browser. Supabase login and team sync come later.
     </p>
   </main>
 
@@ -596,7 +596,7 @@ Previous Version: v0.2
 
       const entry = {
         id: crypto.randomUUID(),
-        date: getDateString(timerStartDateTime || new Date()),
+        date: getLocalDateString(timerStartDateTime || new Date()),
         project: document.getElementById("project").value,
         taskType: document.getElementById("taskType").value,
         notes: document.getElementById("timerNotes").value.trim(),
@@ -685,6 +685,7 @@ Previous Version: v0.2
       document.getElementById("manualNotes").value = "";
 
       renderEntries();
+      alert("Manual time entry saved.");
     }
 
     function calculateHoursFromTimes(start, end) {
@@ -715,7 +716,7 @@ Previous Version: v0.2
 
     function renderEntries() {
       const container = document.getElementById("entriesContainer");
-      const today = getDateString(new Date());
+      const today = getLocalDateString(new Date());
 
       const todaysEntries = getEntries()
         .filter(entry => entry.date === today)
@@ -765,8 +766,11 @@ Previous Version: v0.2
       `;
     }
 
-    function getDateString(date) {
-      return date.toISOString().split("T")[0];
+    function getLocalDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     }
 
     function formatTimeForDisplay(date) {
@@ -793,7 +797,7 @@ Previous Version: v0.2
     function init() {
       populateSelects();
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = getLocalDateString(new Date());
       document.getElementById("manualDate").value = today;
       document.getElementById("timerStartedAt").textContent = "Started at: —";
 
