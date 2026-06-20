@@ -1,7 +1,7 @@
 # Meridian Hub Product Plan
 
 ## 1. Overall Assessment
-Meridian Hub is a strong internal operations concept because it expands the existing time tracker into a single cloud-backed hub for small-company workflows. The idea is best approached as a modular web app: launch with time tracking plus a very small expense/payment capture workflow, then add richer expense management, recurring expenses, receipt uploads, and reporting over time.
+Meridian Hub is a strong internal operations concept because it expands the existing time tracker into a single cloud-backed hub for small-company workflows. The idea is best approached as a modular web app: launch with time tracking plus a very small company operating expense/payment capture workflow, then add richer tracking for subscriptions, business insurance, vendor bills, recurring expenses, receipts, and reporting over time.
 
 The current company size of three team members is an advantage for Version 1 because the product can stay simple, feedback loops are short, and adoption can be measured directly through daily use. The biggest architecture decision is to avoid building separate disconnected apps; instead, create one shared authentication, user, company, reporting, and storage foundation that supports modules such as Time and Expenses.
 
@@ -9,7 +9,7 @@ The current company size of three team members is an advantage for Version 1 bec
 - Define the hub as a collection of modules, starting with Time Tracking and Expenses.
 - Clarify user roles early: owner/admin, team member, and possibly read-only reviewer.
 - Keep Version 1 focused on daily entry capture instead of full accounting.
-- Add approval/status concepts only where they matter immediately, such as marking an expense or recent payment as paid.
+- Add status concepts only where they matter immediately, such as marking a company operating expense, vendor bill, subscription, insurance payment, or recent payment as paid.
 - Standardize reporting around date ranges, users, projects, categories, and exportable summaries.
 - Use cloud authentication and row-level permissions from the beginning so multi-user sync is not retrofitted later.
 - Treat receipt uploads as a Version 0.2 or 0.3 feature unless they are required for this week.
@@ -35,14 +35,14 @@ Version 1 should prove that two or more team members can reliably enter and view
 - Time entry creation with date, user, project, task type, notes, and hours.
 - Basic time list with filters by user, project, and date range.
 - A simple reports view showing total hours by user and project.
-- Simple expense/payment entry with date, vendor/payee, amount, category, description, status, and paid marker.
+- Simple company operating expense/payment entry with date, vendor/payee, amount, category, description, status, and paid marker.
 - Cloud database persistence.
 - Basic responsive web layout.
 
 ### Version 1 Success Criteria
 - You and at least one other member can log in separately.
 - Both users can create time entries and see synced updates.
-- A recent payment can be entered and marked paid.
+- A recent company payment, such as a subscription, business insurance payment, or vendor bill, can be entered and marked paid.
 - Basic totals are visible without exporting data manually.
 
 ## 5. Version Roadmap
@@ -54,9 +54,9 @@ Version 1 should prove that two or more team members can reliably enter and view
 - Support create, edit, delete, and list for time entries.
 - Add basic reporting by user, project, and date range.
 
-### Version 0.2 — Simple Expenses and Payments
-- Add expense/payment entry form.
-- Add categories, vendors/payees, amount, payment date, due date, and paid/unpaid status.
+### Version 0.2 — Simple Company Expenses and Payments
+- Add company operating expense/payment entry form.
+- Add categories for subscriptions, business insurance, software, professional services, utilities, vendors/payees, amount, payment date, due date, and paid/unpaid status.
 - Add expense list filters.
 - Add totals by month, category, and status.
 
@@ -151,13 +151,13 @@ The basic hub is moderate complexity because time and expense entry forms are st
 6. Save time entry.
 7. View entry in recent activity and reports.
 
-### Expense / Payment Flow
-1. Open Expenses.
-2. Choose New Expense or New Payment.
-3. Enter vendor/payee, amount, date, category, and description.
+### Company Expense / Payment Flow
+1. The responsible company operator opens Expenses.
+2. Choose New Company Expense or New Payment.
+3. Enter vendor/payee, amount, date, category, and description for items such as subscriptions, business insurance, software, or vendor bills.
 4. Set status as paid or unpaid.
 5. Save record.
-6. View totals and filtered expense list.
+6. View totals and filtered company expense list.
 
 ### Admin Flow
 1. Admin signs in.
@@ -193,12 +193,12 @@ The basic hub is moderate complexity because time and expense entry forms are st
 - Small report summary for total hours.
 
 ### Expense Tracker
-- Expense/payment form.
+- Company operating expense/payment form, primarily for one operator rather than employee reimbursements.
 - Paid/unpaid status control.
-- Vendor/payee and category fields.
-- Expense list table.
+- Vendor/payee and category fields for subscriptions, business insurance, software, professional services, utilities, and other company costs.
+- Company expense list table.
 - Filters for status, category, vendor, and date range.
-- Later: receipt upload area.
+- Later: receipt or policy/document upload area.
 
 ### Reports
 - Date range selector.
@@ -286,7 +286,7 @@ The basic hub is moderate complexity because time and expense entry forms are st
 ### expenses
 - id
 - company_id
-- user_id
+- entered_by_user_id
 - vendor_id
 - category_id
 - expense_date
@@ -296,6 +296,7 @@ The basic hub is moderate complexity because time and expense entry forms are st
 - currency
 - status
 - description
+- expense_kind
 - is_recurring
 - recurring_template_id
 - created_at
@@ -342,9 +343,9 @@ The basic hub is moderate complexity because time and expense entry forms are st
 - Add time entry CRUD.
 - Add basic filters and reports.
 
-### Phase 3 — Expense MVP
-- Add expense/payment form.
-- Add expense list and filters.
+### Phase 3 — Company Expense MVP
+- Add company operating expense/payment form.
+- Add expense list and filters for subscriptions, business insurance, software, professional services, utilities, and vendor bills.
 - Add paid/unpaid status.
 - Add monthly totals.
 

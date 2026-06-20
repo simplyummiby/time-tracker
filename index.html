@@ -5,7 +5,7 @@ Date: 2026-06-20
 Changes:
 - Added Meridian Hub shell with Dashboard, Time Tracker, Expenses, and Reports sections
 - Kept existing timer, manual time entry, local storage, and reports modal features
-- Added expense tracker placeholder and dashboard summary cards
+- Clarified company operating expense placeholder and dashboard summary cards
 Previous Version: v0.3b
 -->
 
@@ -780,7 +780,7 @@ Previous Version: v0.3b
     <section class="app-section active" id="dashboardSection">
       <div class="card hero-card">
         <h2>Meridian Hub</h2>
-        <p>A central workspace for time tracking today and expenses next. Your existing timer, manual entries, local browser storage, and reports stay in place while the app grows into a fuller operations hub.</p>
+        <p>A central workspace for time tracking today and company operating expenses next. Your existing timer, manual entries, local browser storage, and reports stay in place while the app grows into a fuller operations hub.</p>
       </div>
 
       <div class="dashboard-grid">
@@ -813,8 +813,8 @@ Previous Version: v0.3b
             <button class="btn-primary" onclick="showSection('timeTracker')">Go to Time Tracker</button>
           </div>
           <div class="module-card">
-            <h3>Enter Expense</h3>
-            <p>Expense tracking is reserved as the next module, with a placeholder ready now.</p>
+            <h3>Record Company Expense</h3>
+            <p>Track business costs like subscriptions, insurance, software, utilities, and vendor bills.</p>
             <button class="btn-secondary" onclick="showSection('expenses')">Preview Expenses</button>
           </div>
           <div class="module-card">
@@ -965,7 +965,7 @@ Previous Version: v0.3b
     <section class="app-section" id="expensesSection">
       <section class="card hero-card">
         <h2>Expense Tracker</h2>
-        <p>This module is intentionally a placeholder for now. The next build can add vendor/payee, amount, category, paid status, and receipt fields without disturbing the working time tracker.</p>
+        <p>This module is intentionally a placeholder for now. It is for company operating expenses like subscriptions, business insurance, software, utilities, and vendor bills—not employee reimbursement tracking.</p>
       </section>
       <section class="card">
         <div class="section-title">
@@ -973,12 +973,12 @@ Previous Version: v0.3b
         </div>
         <div class="quick-actions">
           <div class="module-card">
-            <h3>Planned Version 0.2 Fields</h3>
-            <p>Vendor/payee, amount, date, category, description, and paid/unpaid status.</p>
+            <h3>Planned Company Expense Fields</h3>
+            <p>Vendor/payee, amount, date, category, description, due date, and paid/unpaid status.</p>
           </div>
           <div class="module-card">
-            <h3>Future Receipt Uploads</h3>
-            <p>Receipts are planned after the first expense entry workflow is working.</p>
+            <h3>Recurring Business Costs</h3>
+            <p>Designed for recurring costs such as subscriptions, insurance policies, software, and monthly vendor bills.</p>
           </div>
           <div class="module-card">
             <h3>Cloud Sync Later</h3>
