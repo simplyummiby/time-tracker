@@ -950,7 +950,25 @@ Previous Version: v0.4
           <span class="metric-label">Expense Status</span>
           <strong class="metric-value">Next</strong>
         </div>
-      </div>
+        <div class="quick-actions">
+          <div class="module-card">
+            <h3>Log Time</h3>
+            <p>Open the existing timer and manual time entry tools.</p>
+            <button class="btn-primary" onclick="showSection('timeTracker')">Go to Time Tracker</button>
+          </div>
+          <div class="module-card">
+            <h3>Record Company Expense</h3>
+            <p>Track business costs like subscriptions, insurance, software, utilities, and vendor bills.</p>
+            <button class="btn-secondary" onclick="showSection('expenses')">Preview Expenses</button>
+          </div>
+          <div class="module-card">
+            <h3>Review Reports</h3>
+            <p>Use the existing reports modal with project and task-type filters.</p>
+            <button class="btn-secondary" onclick="openReportsModal()">Open Reports</button>
+          </div>
+        </div>
+      </section>
+    </section>
 
       <section class="card">
         <div class="section-title">
@@ -981,6 +999,8 @@ Previous Version: v0.4
         <div class="section-title">
           <h2>▶ Timer Entry</h2>
         </div>
+      </section>
+    </section>
 
         <div class="form-grid">
           <div>
