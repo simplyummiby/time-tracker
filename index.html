@@ -3,7 +3,7 @@ Meridian Hub
 Version: v0.5
 Date: 2026-06-20
 Changes:
-- Added Supabase authentication scaffolding and company workspace status
+- Added invite/password setup support for Supabase auth links
 - Added cloud-ready, user-aware time entry sync with local fallback
 - Kept existing timer, manual time entry, local storage, and reports modal features
 Previous Version: v0.4
@@ -863,6 +863,11 @@ Previous Version: v0.4
               <button class="btn-secondary" onclick="signUpUser()">Create User</button>
               <button class="btn-secondary" onclick="signOutUser()">Sign Out</button>
             </div>
+            <label for="newPassword" style="margin-top: 16px;">New Password From Invite/Reset Link</label>
+            <input id="newPassword" type="password" placeholder="Set or update password" />
+            <div class="auth-actions">
+              <button class="btn-primary" onclick="updateUserPassword()">Set Password</button>
+            </div>
             <p class="auth-note" id="authStatus">Supabase is not configured yet. Local mode is active.</p>
           </div>
         </div>
@@ -896,23 +901,6 @@ Previous Version: v0.4
       <section class="card">
         <div class="section-title">
           <h2>▶ Timer Entry</h2>
-        </div>
-        <div class="quick-actions">
-          <div class="module-card">
-            <h3>Log Time</h3>
-            <p>Open the existing timer and manual time entry tools.</p>
-            <button class="btn-primary" onclick="showSection('timeTracker')">Go to Time Tracker</button>
-          </div>
-          <div class="module-card">
-            <h3>Record Company Expense</h3>
-            <p>Track business costs like subscriptions, insurance, software, utilities, and vendor bills.</p>
-            <button class="btn-secondary" onclick="showSection('expenses')">Preview Expenses</button>
-          </div>
-          <div class="module-card">
-            <h3>Review Reports</h3>
-            <p>Use the existing reports modal with project and task-type filters.</p>
-            <button class="btn-secondary" onclick="openReportsModal()">Open Reports</button>
-          </div>
         </div>
       </section>
     </section>
@@ -1162,9 +1150,9 @@ Previous Version: v0.4
     const STORAGE_KEY = "meridian_time_entries_v02";
     const WORKSPACE_KEY = "meridian_company_workspace_v01";
     const SUPABASE_CONFIG = {
-      url: "ee1a114f-dd99-44ea-8b57-39a163cbca18",
-      anonKey: "sb_publishable_xwevLHpBAy47UpmFQ9hKbg_ScycOfBR",
-      companyId: "69e12bdd-170d-414a-98c4-4809254881b2"
+      url: "",
+      anonKey: "",
+      companyId: ""
     };
 
     let editingEntryId = null;
@@ -1263,6 +1251,22 @@ Previous Version: v0.4
       cloudModeReady = false;
       updateCloudStatus("Local Mode", "Signed out. Local mode is active.", false);
       renderEntries();
+    }
+
+    async function updateUserPassword() {
+      if (!supabaseClient) return alert("Add your Supabase URL, anon key, and company ID before setting a password.");
+      const newPassword = document.getElementById("newPassword").value;
+
+      if (!newPassword || newPassword.length < 8) {
+        alert("Enter a new password with at least 8 characters.");
+        return;
+      }
+
+      const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+      if (error) return alert(error.message);
+
+      document.getElementById("newPassword").value = "";
+      alert("Password updated. You can now sign in with your email and password.");
     }
 
     async function refreshCloudEntries() {

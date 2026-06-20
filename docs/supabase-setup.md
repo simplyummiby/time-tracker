@@ -38,6 +38,22 @@ const SUPABASE_CONFIG = {
 
 If these values are empty, the app intentionally stays in local mode and continues to use browser `localStorage`.
 
+
+## Fix invite links that open `localhost`
+
+If an invite email opens a `localhost` URL and your browser says refused to connect, Supabase is redirecting to a local development URL instead of the URL where Meridian Hub is actually running.
+
+To fix it:
+
+1. In Supabase, go to **Authentication → URL Configuration**.
+2. Set **Site URL** to the real URL where you open Meridian Hub.
+   - If you are testing locally, start a local server first and use that exact URL, such as `http://localhost:4173`.
+   - If the app is hosted somewhere, use the hosted URL, such as `https://your-domain.com`.
+3. Add that same URL to **Redirect URLs**.
+4. Send a new invite or password reset email after changing the URL settings.
+
+After the invite link opens Meridian Hub successfully, use the **New Password From Invite/Reset Link** field in the Cloud Workspace panel and click **Set Password**. Then sign in with your email and new password.
+
 ## 4. Current behavior
 
 - Signed-out or unconfigured app: time entries save locally in the browser.
