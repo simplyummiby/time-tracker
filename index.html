@@ -851,7 +851,16 @@ Previous Version: v0.4
           <div>
             <label for="workspaceName">Company Workspace</label>
             <input id="workspaceName" type="text" value="Meridian ITP" />
-            <p class="auth-note">Configure Supabase in the script settings to enable shared cloud entries. Until then, the tracker continues to use local browser storage.</p>
+            <p class="auth-note">Configure Supabase below to enable shared cloud entries. Until then, the tracker continues to use local browser storage.</p>
+            <label for="supabaseUrl" style="margin-top: 16px;">Supabase URL</label>
+            <input id="supabaseUrl" type="url" placeholder="https://your-project.supabase.co" />
+            <label for="supabaseAnonKey" style="margin-top: 12px;">Supabase Anon Key</label>
+            <input id="supabaseAnonKey" type="password" placeholder="Paste anon public key" />
+            <label for="supabaseCompanyId" style="margin-top: 12px;">Company ID</label>
+            <input id="supabaseCompanyId" type="text" placeholder="Company UUID" />
+            <div class="auth-actions">
+              <button class="btn-secondary" onclick="saveSupabaseSettings()">Save Supabase Settings</button>
+            </div>
           </div>
           <div>
             <label for="authEmail">Team Member Email</label>
@@ -1150,10 +1159,11 @@ Previous Version: v0.4
   <script>
     const STORAGE_KEY = "meridian_time_entries_v02";
     const WORKSPACE_KEY = "meridian_company_workspace_v01";
+    const SUPABASE_SETTINGS_KEY = "meridian_supabase_settings_v01";
     const SUPABASE_CONFIG = {
-      url: "",
+      url: "https://lktgbqlecrjfbzejwpil.supabase.co",
       anonKey: "",
-      companyId: ""
+      companyId: "69e12bdd-170d-414a-98c4-4809254881b2"
     };
 
     let editingEntryId = null;
@@ -1186,6 +1196,30 @@ Previous Version: v0.4
     let timerRunning = false;
     let timerStartDateTime = null;
 
+    function loadSupabaseSettings() {
+      const savedSettings = JSON.parse(localStorage.getItem(SUPABASE_SETTINGS_KEY) || "{}");
+      SUPABASE_CONFIG.url = savedSettings.url || SUPABASE_CONFIG.url;
+      SUPABASE_CONFIG.anonKey = savedSettings.anonKey || SUPABASE_CONFIG.anonKey;
+      SUPABASE_CONFIG.companyId = savedSettings.companyId || SUPABASE_CONFIG.companyId;
+
+      document.getElementById("supabaseUrl").value = SUPABASE_CONFIG.url;
+      document.getElementById("supabaseAnonKey").value = SUPABASE_CONFIG.anonKey;
+      document.getElementById("supabaseCompanyId").value = SUPABASE_CONFIG.companyId;
+    }
+
+    async function saveSupabaseSettings() {
+      SUPABASE_CONFIG.url = document.getElementById("supabaseUrl").value.trim();
+      SUPABASE_CONFIG.anonKey = document.getElementById("supabaseAnonKey").value.trim();
+      SUPABASE_CONFIG.companyId = document.getElementById("supabaseCompanyId").value.trim();
+
+      localStorage.setItem(SUPABASE_SETTINGS_KEY, JSON.stringify(SUPABASE_CONFIG));
+      supabaseClient = null;
+      currentUser = null;
+      cloudEntries = [];
+      cloudModeReady = false;
+      await initSupabase();
+    }
+
     function isSupabaseConfigured() {
       return Boolean(SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey && SUPABASE_CONFIG.companyId);
     }
@@ -1195,6 +1229,7 @@ Previous Version: v0.4
     }
 
     async function initSupabase() {
+      loadSupabaseSettings();
       const workspaceInput = document.getElementById("workspaceName");
       workspaceInput.value = localStorage.getItem(WORKSPACE_KEY) || workspaceInput.value;
       workspaceInput.addEventListener("change", () => {

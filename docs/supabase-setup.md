@@ -30,13 +30,15 @@ In `index.html`, fill in `SUPABASE_CONFIG`:
 
 ```js
 const SUPABASE_CONFIG = {
-  url: "https://your-project-ref.supabase.co",
+  url: "https://lktgbqlecrjfbzejwpil.supabase.co",
   anonKey: "your-supabase-anon-key",
-  companyId: "your-company-id"
+  companyId: "69e12bdd-170d-414a-98c4-4809254881b2"
 };
 ```
 
-If these values are empty, the app intentionally stays in local mode and continues to use browser `localStorage`.
+The app also has Supabase Settings fields in the Cloud Workspace panel. Use those fields to save the URL, anon key, and company id into browser `localStorage` so they do not get wiped out when `index.html` changes during development.
+
+If the anon key is empty, the app intentionally stays in local mode and continues to use browser `localStorage`. The user id is not the anon key; get the anon public key from **Supabase → Project Settings → API**.
 
 
 ## Fix invite links that open `localhost`
