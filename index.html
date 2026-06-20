@@ -3,8 +3,8 @@ Meridian Hub
 Version: v0.5
 Date: 2026-06-20
 Changes:
-- Added invite/password setup support for Supabase auth links
-- Added cloud-ready, user-aware time entry sync with local fallback
+- Moved sign-in and workspace setup to a splash page
+- Kept cloud-ready, user-aware time entry sync with local fallback
 - Kept existing timer, manual time entry, local storage, and reports modal features
 Previous Version: v0.4
 -->
@@ -261,6 +261,57 @@ Previous Version: v0.4
       font-size: 0.92rem;
       line-height: 1.5;
       margin: 12px 0 0;
+    }
+
+    .splash-layout {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .splash-intro {
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+      border-radius: var(--radius);
+      color: white;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 520px;
+    }
+
+    .splash-intro h2 {
+      margin: 0 0 14px;
+      font-size: clamp(2.4rem, 5vw, 4rem);
+      letter-spacing: -1px;
+    }
+
+    .splash-intro p {
+      color: #dce8ff;
+      font-size: 1.05rem;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .splash-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .splash-list span {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 14px;
+      display: block;
+      font-weight: 800;
+      padding: 13px 14px;
+    }
+
+    .login-card {
+      display: grid;
+      gap: 18px;
     }
 
     .card {
@@ -774,7 +825,8 @@ Previous Version: v0.4
       .report-grid,
       .dashboard-grid,
       .quick-actions,
-      .workspace-panel {
+      .workspace-panel,
+      .splash-layout {
         grid-template-columns: 1fr;
       }
 
@@ -809,7 +861,7 @@ Previous Version: v0.4
     </div>
 
     <div class="top-actions" role="navigation" aria-label="Meridian Hub sections">
-      <button class="nav-btn active" data-section="dashboard" onclick="showSection('dashboard')">🏠 Dashboard</button>
+      <button class="nav-btn" data-section="dashboard" onclick="showSection('dashboard')">🏠 Dashboard</button>
       <button class="nav-btn" data-section="timeTracker" onclick="showSection('timeTracker')">⏱ Time Tracker</button>
       <button class="nav-btn" data-section="expenses" onclick="showSection('expenses')">💳 Expenses</button>
       <button class="nav-btn" data-section="reports" onclick="showSection('reports')">📊 Reports</button>
@@ -817,7 +869,80 @@ Previous Version: v0.4
   </header>
 
   <main>
-    <section class="app-section active" id="dashboardSection">
+    <section class="app-section active" id="splashSection">
+      <div class="splash-layout">
+        <section class="splash-intro">
+          <div>
+            <h2>Meridian Hub</h2>
+            <p>Sign in to sync time entries across the company workspace, or continue locally while setup is still in progress.</p>
+            <div class="splash-list">
+              <span>⏱ Track time by project and task</span>
+              <span>☁️ Sync entries by user when Supabase is connected</span>
+              <span>💳 Company expenses module coming next</span>
+              <span>📊 Reports and exports planned for time and expenses</span>
+            </div>
+          </div>
+          <p>Local mode remains available as a fallback, but cloud mode is recommended for team use.</p>
+        </section>
+
+        <section class="card login-card">
+          <div class="section-title">
+            <h2>☁️ Sign in to Meridian Hub</h2>
+            <span class="status-pill" id="cloudStatus">Local Mode</span>
+          </div>
+
+          <div>
+            <label for="authEmail">Team Member Email</label>
+            <input id="authEmail" type="email" placeholder="name@company.com" />
+            <label for="authPassword" style="margin-top: 12px;">Password</label>
+            <input id="authPassword" type="password" placeholder="Password" />
+            <div class="auth-actions">
+              <button class="btn-primary" onclick="signInUser()">Sign In</button>
+              <button class="btn-secondary" onclick="signUpUser()">Create User</button>
+              <button class="btn-secondary" onclick="sendPasswordReset()">Send Password Reset</button>
+              <button class="btn-secondary" onclick="continueLocalMode()">Continue Local</button>
+            </div>
+          </div>
+
+          <div>
+            <label for="newPassword">New Password From Invite/Reset Link</label>
+            <input id="newPassword" type="password" placeholder="Set or update password" />
+            <div class="auth-actions">
+              <button class="btn-primary" onclick="updateUserPassword()">Set Password</button>
+              <button class="btn-secondary" onclick="signOutUser()">Sign Out</button>
+            </div>
+          </div>
+
+          <div>
+            <label for="workspaceName">Company Workspace</label>
+            <input id="workspaceName" type="text" value="Meridian ITP" />
+            <p class="auth-note">Configure Supabase below to enable shared cloud entries. Until then, the tracker continues to use local browser storage.</p>
+          </div>
+
+          <div class="workspace-panel">
+            <div>
+              <label for="supabaseUrl">Supabase URL</label>
+              <input id="supabaseUrl" type="url" placeholder="https://your-project.supabase.co" />
+            </div>
+            <div>
+              <label for="supabaseAnonKey">Supabase Publishable Key</label>
+              <input id="supabaseAnonKey" type="password" placeholder="Paste publishable/anon key" />
+            </div>
+            <div class="full">
+              <label for="supabaseCompanyId">Company ID</label>
+              <input id="supabaseCompanyId" type="text" placeholder="Company UUID" />
+              <div class="auth-actions">
+                <button class="btn-secondary" onclick="saveSupabaseSettings()">Save Supabase Settings</button>
+              </div>
+            </div>
+          </div>
+
+          <p class="auth-note" id="authStatus">Supabase is not configured yet. Local mode is active.</p>
+        </section>
+      </div>
+    </section>
+
+    <section class="app-section" id="dashboardSection">
       <div class="card hero-card">
         <h2>Meridian Hub</h2>
         <p>A central workspace for time tracking today and company operating expenses next. Your existing timer, manual entries, local browser storage, and reports stay in place while the app grows into a fuller operations hub.</p>
@@ -840,48 +965,25 @@ Previous Version: v0.4
           <span class="metric-label">Expense Status</span>
           <strong class="metric-value">Next</strong>
         </div>
-      </div>
-
-      <section class="card">
-        <div class="section-title">
-          <h2>☁️ Cloud Workspace</h2>
-          <span class="status-pill" id="cloudStatus">Local Mode</span>
-        </div>
-        <div class="workspace-panel">
-          <div>
-            <label for="workspaceName">Company Workspace</label>
-            <input id="workspaceName" type="text" value="Meridian ITP" />
-            <p class="auth-note">Configure Supabase below to enable shared cloud entries. Until then, the tracker continues to use local browser storage.</p>
-            <label for="supabaseUrl" style="margin-top: 16px;">Supabase URL</label>
-            <input id="supabaseUrl" type="url" placeholder="https://your-project.supabase.co" />
-            <label for="supabaseAnonKey" style="margin-top: 12px;">Supabase Anon Key</label>
-            <input id="supabaseAnonKey" type="password" placeholder="Paste anon public key" />
-            <label for="supabaseCompanyId" style="margin-top: 12px;">Company ID</label>
-            <input id="supabaseCompanyId" type="text" placeholder="Company UUID" />
-            <div class="auth-actions">
-              <button class="btn-secondary" onclick="saveSupabaseSettings()">Save Supabase Settings</button>
-            </div>
+        <div class="quick-actions">
+          <div class="module-card">
+            <h3>Log Time</h3>
+            <p>Open the existing timer and manual time entry tools.</p>
+            <button class="btn-primary" onclick="showSection('timeTracker')">Go to Time Tracker</button>
           </div>
-          <div>
-            <label for="authEmail">Team Member Email</label>
-            <input id="authEmail" type="email" placeholder="name@company.com" />
-            <label for="authPassword" style="margin-top: 12px;">Password</label>
-            <input id="authPassword" type="password" placeholder="Password" />
-            <div class="auth-actions">
-              <button class="btn-primary" onclick="signInUser()">Sign In</button>
-              <button class="btn-secondary" onclick="signUpUser()">Create User</button>
-              <button class="btn-secondary" onclick="signOutUser()">Sign Out</button>
-              <button class="btn-secondary" onclick="sendPasswordReset()">Send Password Reset</button>
-            </div>
-            <label for="newPassword" style="margin-top: 16px;">New Password From Invite/Reset Link</label>
-            <input id="newPassword" type="password" placeholder="Set or update password" />
-            <div class="auth-actions">
-              <button class="btn-primary" onclick="updateUserPassword()">Set Password</button>
-            </div>
-            <p class="auth-note" id="authStatus">Supabase is not configured yet. Local mode is active.</p>
+          <div class="module-card">
+            <h3>Record Company Expense</h3>
+            <p>Track business costs like subscriptions, insurance, software, utilities, and vendor bills.</p>
+            <button class="btn-secondary" onclick="showSection('expenses')">Preview Expenses</button>
+          </div>
+          <div class="module-card">
+            <h3>Review Reports</h3>
+            <p>Use the existing reports modal with project and task-type filters.</p>
+            <button class="btn-secondary" onclick="openReportsModal()">Open Reports</button>
           </div>
         </div>
       </section>
+    </section>
 
       <section class="card">
         <div class="section-title">
@@ -1291,6 +1393,11 @@ Previous Version: v0.4
       authStatus.textContent = message;
     }
 
+    function continueLocalMode() {
+      updateCloudStatus("Local Mode", "Continuing locally. Entries save in this browser only.", false);
+      showSection("dashboard");
+    }
+
     async function signInUser() {
       if (!supabaseClient) return alert("Add your Supabase URL, anon key, and company ID before signing in.");
       const email = document.getElementById("authEmail").value.trim();
@@ -1329,6 +1436,7 @@ Previous Version: v0.4
       cloudModeReady = false;
       updateCloudStatus("Local Mode", "Signed out. Local mode is active.", false);
       renderEntries();
+      showSection("splash");
     }
 
     async function updateUserPassword() {
@@ -1372,6 +1480,7 @@ Previous Version: v0.4
       cloudModeReady = true;
       updateCloudStatus("Cloud Sync", `Signed in as ${currentUser.email}. Showing shared company workspace entries.`, true);
       renderEntries();
+      showSection("dashboard");
     }
 
     async function persistNewEntry(entry) {
