@@ -1,13 +1,12 @@
 <!--
-Meridian ITP Time Tracker
-Version: v0.3b
-Date: 2026-06-16
+Meridian Hub
+Version: v0.5
+Date: 2026-06-20
 Changes:
-- Added Reports modal
-- Added Project and Task Type filters in reports
-- Added summary cards for total hours, entries, and projects
-- Added bar-style totals with hrs labels
-Previous Version: v0.3a.6
+- Added invite/password setup support for Supabase auth links
+- Added cloud-ready, user-aware time entry sync with local fallback
+- Kept existing timer, manual time entry, local storage, and reports modal features
+Previous Version: v0.4
 -->
 
 <!DOCTYPE html>
@@ -15,7 +14,7 @@ Previous Version: v0.3a.6
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meridian ITP Time Tracker</title>
+  <title>Meridian Hub</title>
 
   <style>
     :root {
@@ -119,11 +118,149 @@ Previous Version: v0.3a.6
       font-weight: 700;
     }
 
+    .nav-btn.active {
+      background: white;
+      color: var(--navy);
+      border-color: white;
+    }
+
     main {
       width: min(1180px, calc(100% - 32px));
       margin: 28px auto 48px;
       display: grid;
       gap: 24px;
+    }
+
+    .app-section {
+      display: none;
+      gap: 24px;
+    }
+
+    .app-section.active {
+      display: grid;
+    }
+
+    .hero-card {
+      background: linear-gradient(135deg, #071b3a, #125adf);
+      color: white;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -90px;
+      top: -90px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.10);
+    }
+
+    .hero-card h2 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      letter-spacing: -1px;
+    }
+
+    .hero-card p {
+      max-width: 760px;
+      margin: 0;
+      color: #dce8ff;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .hub-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .metric-value {
+      color: var(--navy);
+      display: block;
+      font-size: 2.1rem;
+      font-weight: 900;
+      margin-top: 10px;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .module-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      background: #fbfdff;
+    }
+
+    .module-card h3 { margin: 0 0 8px; }
+
+    .module-card p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0 0 16px;
+    }
+
+    .workspace-panel {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 8px 12px;
+      background: #fff7e6;
+      color: #946200;
+      font-size: 0.82rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .status-pill.connected {
+      background: #eaf8ef;
+      color: var(--green);
+    }
+
+    .auth-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .auth-note {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+      margin: 12px 0 0;
     }
 
     .card {
@@ -634,7 +771,10 @@ Previous Version: v0.3a.6
       .timer-actions,
       .report-filters,
       .report-summary,
-      .report-grid {
+      .report-grid,
+      .dashboard-grid,
+      .quick-actions,
+      .workspace-panel {
         grid-template-columns: 1fr;
       }
 
@@ -663,158 +803,280 @@ Previous Version: v0.3a.6
     <div class="brand">
       <div class="logo-mark"></div>
       <div>
-        <h1>MERIDIAN ITP</h1>
-        <p>Time Tracker</p>
+        <h1>MERIDIAN HUB</h1>
+        <p>Operations Center</p>
       </div>
     </div>
 
-    <div class="top-actions">
-      <button class="nav-btn" onclick="alert('Timesheet modal coming soon.')">📅 Timesheet</button>
-      <button class="nav-btn" onclick="openReportsModal()">📊 Reports</button>
-      <button class="nav-btn" onclick="alert('Projects will later pull from Coda.')">📁 Projects</button>
-      <button class="nav-btn" onclick="alert('Settings coming soon.')">⚙️ Settings</button>
+    <div class="top-actions" role="navigation" aria-label="Meridian Hub sections">
+      <button class="nav-btn active" data-section="dashboard" onclick="showSection('dashboard')">🏠 Dashboard</button>
+      <button class="nav-btn" data-section="timeTracker" onclick="showSection('timeTracker')">⏱ Time Tracker</button>
+      <button class="nav-btn" data-section="expenses" onclick="showSection('expenses')">💳 Expenses</button>
+      <button class="nav-btn" data-section="reports" onclick="showSection('reports')">📊 Reports</button>
     </div>
   </header>
 
   <main>
-    <section class="card">
-      <div class="section-title">
-        <h2>▶ Timer Entry</h2>
+    <section class="app-section active" id="dashboardSection">
+      <div class="card hero-card">
+        <h2>Meridian Hub</h2>
+        <p>A central workspace for time tracking today and company operating expenses next. Your existing timer, manual entries, local browser storage, and reports stay in place while the app grows into a fuller operations hub.</p>
       </div>
 
-      <div class="form-grid">
-        <div>
-          <label for="project">Project</label>
-          <select id="project"></select>
+      <div class="dashboard-grid">
+        <div class="hub-card">
+          <span class="metric-label">Today Hours</span>
+          <strong class="metric-value" id="dashboardTodayHours">0.00</strong>
         </div>
-
-        <div>
-          <label for="taskType">Task Type</label>
-          <select id="taskType"></select>
+        <div class="hub-card">
+          <span class="metric-label">All Time Hours</span>
+          <strong class="metric-value" id="dashboardAllHours">0.00</strong>
         </div>
-
-        <div class="full">
-          <label for="timerNotes">Notes Optional</label>
-          <textarea id="timerNotes" placeholder="What are you working on?"></textarea>
+        <div class="hub-card">
+          <span class="metric-label">Time Entries</span>
+          <strong class="metric-value" id="dashboardEntryCount">0</strong>
+        </div>
+        <div class="hub-card">
+          <span class="metric-label">Expense Status</span>
+          <strong class="metric-value">Next</strong>
         </div>
       </div>
 
-      <div class="timer-panel">
-        <div class="timer-state-bar" id="timerStatus">
-          <span class="status-dot"></span>
-          <span>Ready to Start</span>
+      <section class="card">
+        <div class="section-title">
+          <h2>☁️ Cloud Workspace</h2>
+          <span class="status-pill" id="cloudStatus">Local Mode</span>
         </div>
-
-        <div class="timer-display">
-          <div class="timer-labels">
-            <span>Hours</span>
-            <span>Minutes</span>
-            <span>Seconds</span>
+        <div class="workspace-panel">
+          <div>
+            <label for="workspaceName">Company Workspace</label>
+            <input id="workspaceName" type="text" value="Meridian ITP" />
+            <p class="auth-note">Configure Supabase in the script settings to enable shared cloud entries. Until then, the tracker continues to use local browser storage.</p>
           </div>
-
-          <div class="timer-time" id="timerDisplay">00:00:00</div>
-
-          <div class="timer-started">
-            Started: <strong id="timerStartedAt">—</strong>
+          <div>
+            <label for="authEmail">Team Member Email</label>
+            <input id="authEmail" type="email" placeholder="name@company.com" />
+            <label for="authPassword" style="margin-top: 12px;">Password</label>
+            <input id="authPassword" type="password" placeholder="Password" />
+            <div class="auth-actions">
+              <button class="btn-primary" onclick="signInUser()">Sign In</button>
+              <button class="btn-secondary" onclick="signUpUser()">Create User</button>
+              <button class="btn-secondary" onclick="signOutUser()">Sign Out</button>
+            </div>
+            <label for="newPassword" style="margin-top: 16px;">New Password From Invite/Reset Link</label>
+            <input id="newPassword" type="password" placeholder="Set or update password" />
+            <div class="auth-actions">
+              <button class="btn-primary" onclick="updateUserPassword()">Set Password</button>
+            </div>
+            <p class="auth-note" id="authStatus">Supabase is not configured yet. Local mode is active.</p>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="timer-actions">
-        <button class="btn-primary" onclick="startTimer()">▶ Start</button>
-        <button class="btn-secondary" onclick="pauseTimer()">Ⅱ Pause</button>
-        <button class="btn-danger" onclick="stopTimer()">■ Stop & Save</button>
-      </div>
-
-      <p class="helper-text">
-        Forgot to start timer?<br />
-        <strong>Use Manual Time Entry below.</strong>
-      </p>
+      <section class="card">
+        <div class="section-title">
+          <h2>⚡ Quick Actions</h2>
+        </div>
+        <div class="quick-actions">
+          <div class="module-card">
+            <h3>Log Time</h3>
+            <p>Open the existing timer and manual time entry tools.</p>
+            <button class="btn-primary" onclick="showSection('timeTracker')">Go to Time Tracker</button>
+          </div>
+          <div class="module-card">
+            <h3>Record Company Expense</h3>
+            <p>Track business costs like subscriptions, insurance, software, utilities, and vendor bills.</p>
+            <button class="btn-secondary" onclick="showSection('expenses')">Preview Expenses</button>
+          </div>
+          <div class="module-card">
+            <h3>Review Reports</h3>
+            <p>Use the existing reports modal with project and task-type filters.</p>
+            <button class="btn-secondary" onclick="openReportsModal()">Open Reports</button>
+          </div>
+        </div>
+      </section>
     </section>
 
-    <section class="card" id="manualEntryCard">
-      <div class="section-title">
-        <h2>⏱ Manual Time Entry</h2>
-      </div>
-
-      <div class="edit-banner" id="editBanner">
-        Editing existing time entry
-      </div>
-
-      <div class="form-grid">
-        <div>
-          <label for="manualDate">Date</label>
-          <input id="manualDate" type="date" />
+    <section class="app-section" id="timeTrackerSection">
+      <section class="card">
+        <div class="section-title">
+          <h2>▶ Timer Entry</h2>
         </div>
 
-        <div>
-          <label for="manualProject">Project</label>
-          <select id="manualProject"></select>
+        <div class="form-grid">
+          <div>
+            <label for="project">Project</label>
+            <select id="project"></select>
+          </div>
+
+          <div>
+            <label for="taskType">Task Type</label>
+            <select id="taskType"></select>
+          </div>
+
+          <div class="full">
+            <label for="timerNotes">Notes Optional</label>
+            <textarea id="timerNotes" placeholder="What are you working on?"></textarea>
+          </div>
         </div>
 
-        <div>
-          <label for="manualTaskType">Task Type</label>
-          <select id="manualTaskType"></select>
-        </div>
-      </div>
+        <div class="timer-panel">
+          <div class="timer-state-bar" id="timerStatus">
+            <span class="status-dot"></span>
+            <span>Ready to Start</span>
+          </div>
 
-      <div class="manual-options" style="margin-top: 24px;">
-        <div>
-          <label class="radio-label">
-            <input type="radio" name="entryMode" value="hours" checked />
-            Total Hours
-          </label>
-
-          <label for="manualHours">Hours</label>
-          <input id="manualHours" type="number" step="0.25" placeholder="1.25" />
-        </div>
-
-        <div>
-          <label class="radio-label">
-            <input type="radio" name="entryMode" value="range" />
-            Start Time / End Time
-          </label>
-
-          <div class="time-row">
-            <div>
-              <label for="startTime">Start Time</label>
-              <input id="startTime" type="time" />
+          <div class="timer-display">
+            <div class="timer-labels">
+              <span>Hours</span>
+              <span>Minutes</span>
+              <span>Seconds</span>
             </div>
 
-            <strong>→</strong>
+            <div class="timer-time" id="timerDisplay">00:00:00</div>
 
-            <div>
-              <label for="endTime">End Time</label>
-              <input id="endTime" type="time" />
+            <div class="timer-started">
+              Started: <strong id="timerStartedAt">—</strong>
             </div>
           </div>
         </div>
 
-        <div>
-          <label for="manualNotes">Notes Optional</label>
-          <textarea id="manualNotes" placeholder="What was completed?"></textarea>
+        <div class="timer-actions">
+          <button class="btn-primary" onclick="startTimer()">▶ Start</button>
+          <button class="btn-secondary" onclick="pauseTimer()">Ⅱ Pause</button>
+          <button class="btn-danger" onclick="stopTimer()">■ Stop & Save</button>
         </div>
-      </div>
 
-      <div class="save-row">
-        <button class="btn-primary" id="manualSaveBtn" onclick="saveManualEntry()">💾 Save Manual Entry</button>
-        <button class="btn-secondary" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">Cancel Edit</button>
-      </div>
+        <p class="helper-text">
+          Forgot to start timer?<br />
+          <strong>Use Manual Time Entry below.</strong>
+        </p>
+      </section>
+
+      <section class="card" id="manualEntryCard">
+        <div class="section-title">
+          <h2>⏱ Manual Time Entry</h2>
+        </div>
+
+        <div class="edit-banner" id="editBanner">
+          Editing existing time entry
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label for="manualDate">Date</label>
+            <input id="manualDate" type="date" />
+          </div>
+
+          <div>
+            <label for="manualProject">Project</label>
+            <select id="manualProject"></select>
+          </div>
+
+          <div>
+            <label for="manualTaskType">Task Type</label>
+            <select id="manualTaskType"></select>
+          </div>
+        </div>
+
+        <div class="manual-options" style="margin-top: 24px;">
+          <div>
+            <label class="radio-label">
+              <input type="radio" name="entryMode" value="hours" checked />
+              Total Hours
+            </label>
+
+            <label for="manualHours">Hours</label>
+            <input id="manualHours" type="number" step="0.25" placeholder="1.25" />
+          </div>
+
+          <div>
+            <label class="radio-label">
+              <input type="radio" name="entryMode" value="range" />
+              Start Time / End Time
+            </label>
+
+            <div class="time-row">
+              <div>
+                <label for="startTime">Start Time</label>
+                <input id="startTime" type="time" />
+              </div>
+
+              <strong>→</strong>
+
+              <div>
+                <label for="endTime">End Time</label>
+                <input id="endTime" type="time" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label for="manualNotes">Notes Optional</label>
+            <textarea id="manualNotes" placeholder="What was completed?"></textarea>
+          </div>
+        </div>
+
+        <div class="save-row">
+          <button class="btn-primary" id="manualSaveBtn" onclick="saveManualEntry()">💾 Save Manual Entry</button>
+          <button class="btn-secondary" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">Cancel Edit</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>📋 Today's Entries</h2>
+          <strong id="dailyTotal">Total: 0.00 hrs</strong>
+        </div>
+
+        <div id="entriesContainer"></div>
+      </section>
     </section>
 
-    <section class="card">
-      <div class="section-title">
-        <h2>📋 Today's Entries</h2>
-        <strong id="dailyTotal">Total: 0.00 hrs</strong>
-      </div>
+    <section class="app-section" id="expensesSection">
+      <section class="card hero-card">
+        <h2>Expense Tracker</h2>
+        <p>This module is intentionally a placeholder for now. It is for company operating expenses like subscriptions, business insurance, software, utilities, and vendor bills—not employee reimbursement tracking.</p>
+      </section>
+      <section class="card">
+        <div class="section-title">
+          <h2>💳 Expense Tracker Placeholder</h2>
+        </div>
+        <div class="quick-actions">
+          <div class="module-card">
+            <h3>Planned Company Expense Fields</h3>
+            <p>Vendor/payee, amount, date, category, description, due date, and paid/unpaid status.</p>
+          </div>
+          <div class="module-card">
+            <h3>Recurring Business Costs</h3>
+            <p>Designed for recurring costs such as subscriptions, insurance policies, software, and monthly vendor bills.</p>
+          </div>
+          <div class="module-card">
+            <h3>Cloud Sync Later</h3>
+            <p>Team sync should be added through the shared cloud backend when ready.</p>
+          </div>
+        </div>
+      </section>
+    </section>
 
-      <div id="entriesContainer"></div>
+    <section class="app-section" id="reportsSection">
+      <section class="card">
+        <div class="section-title">
+          <h2>📊 Reports</h2>
+        </div>
+        <p class="helper-text">Current reports summarize time entries. Future reports should cover both time and company operating expenses, with CSV and PDF exports based on filtered results.</p>
+        <div class="save-row">
+          <button class="btn-primary" onclick="openReportsModal()">Open Current Time Reports</button>
+          <button class="btn-secondary" onclick="showSection('timeTracker')">Back to Time Tracker</button>
+        </div>
+      </section>
     </section>
 
     <p class="modal-note">
-      v0.3b saves entries locally in this browser. Supabase login and team sync come later.
+      v0.5 supports Supabase cloud sync when configured and keeps local browser storage as the fallback.
     </p>
   </main>
+
 
   <div class="modal-backdrop" id="reportsBackdrop" onclick="handleBackdropClick(event)">
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="reportsTitle">
@@ -875,15 +1137,27 @@ Previous Version: v0.3a.6
       </div>
 
       <div class="modal-footer">
-        <span>Export features coming soon.</span>
+        <span>Future exports: filtered CSV and PDF reports for time and company expenses.</span>
         <button class="btn-secondary" onclick="closeReportsModal()">Close</button>
       </div>
     </section>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const STORAGE_KEY = "meridian_time_entries_v02";
+    const WORKSPACE_KEY = "meridian_company_workspace_v01";
+    const SUPABASE_CONFIG = {
+      url: "",
+      anonKey: "",
+      companyId: ""
+    };
+
     let editingEntryId = null;
+    let supabaseClient = null;
+    let currentUser = null;
+    let cloudEntries = [];
+    let cloudModeReady = false;
 
     const projects = [
       "Milliken OT Assessment",
@@ -908,6 +1182,246 @@ Previous Version: v0.3a.6
     let elapsedSeconds = 0;
     let timerRunning = false;
     let timerStartDateTime = null;
+
+    function isSupabaseConfigured() {
+      return Boolean(SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey && SUPABASE_CONFIG.companyId);
+    }
+
+    function isCloudMode() {
+      return cloudModeReady && currentUser;
+    }
+
+    async function initSupabase() {
+      const workspaceInput = document.getElementById("workspaceName");
+      workspaceInput.value = localStorage.getItem(WORKSPACE_KEY) || workspaceInput.value;
+      workspaceInput.addEventListener("change", () => {
+        localStorage.setItem(WORKSPACE_KEY, workspaceInput.value.trim() || "Meridian ITP");
+      });
+
+      if (!isSupabaseConfigured() || !window.supabase) {
+        updateCloudStatus("Local Mode", "Supabase is not configured yet. Local mode is active.", false);
+        return;
+      }
+
+      supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+      const { data } = await supabaseClient.auth.getSession();
+      currentUser = data.session?.user || null;
+
+      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+        currentUser = session?.user || null;
+        await refreshCloudEntries();
+      });
+
+      await refreshCloudEntries();
+    }
+
+    function updateCloudStatus(label, message, connected) {
+      const cloudStatus = document.getElementById("cloudStatus");
+      const authStatus = document.getElementById("authStatus");
+      cloudStatus.textContent = label;
+      cloudStatus.classList.toggle("connected", connected);
+      authStatus.textContent = message;
+    }
+
+    async function signInUser() {
+      if (!supabaseClient) return alert("Add your Supabase URL, anon key, and company ID before signing in.");
+      const email = document.getElementById("authEmail").value.trim();
+      const password = document.getElementById("authPassword").value;
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) return alert(error.message);
+      await refreshCloudEntries();
+    }
+
+    async function signUpUser() {
+      if (!supabaseClient) return alert("Add your Supabase URL, anon key, and company ID before creating users.");
+      const email = document.getElementById("authEmail").value.trim();
+      const password = document.getElementById("authPassword").value;
+      const { error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) return alert(error.message);
+      alert("User created. If email confirmation is enabled, confirm the account before signing in.");
+    }
+
+    async function signOutUser() {
+      if (!supabaseClient) return;
+      await supabaseClient.auth.signOut();
+      currentUser = null;
+      cloudEntries = [];
+      cloudModeReady = false;
+      updateCloudStatus("Local Mode", "Signed out. Local mode is active.", false);
+      renderEntries();
+    }
+
+    async function updateUserPassword() {
+      if (!supabaseClient) return alert("Add your Supabase URL, anon key, and company ID before setting a password.");
+      const newPassword = document.getElementById("newPassword").value;
+
+      if (!newPassword || newPassword.length < 8) {
+        alert("Enter a new password with at least 8 characters.");
+        return;
+      }
+
+      const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+      if (error) return alert(error.message);
+
+      document.getElementById("newPassword").value = "";
+      alert("Password updated. You can now sign in with your email and password.");
+    }
+
+    async function refreshCloudEntries() {
+      if (!supabaseClient || !currentUser) {
+        cloudModeReady = false;
+        updateCloudStatus("Local Mode", "Sign in to load shared cloud entries. Local mode is active.", false);
+        renderEntries();
+        return;
+      }
+
+      const { data, error } = await supabaseClient
+        .from("time_entries")
+        .select("*")
+        .eq("company_id", SUPABASE_CONFIG.companyId)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        cloudModeReady = false;
+        updateCloudStatus("Local Mode", `Cloud load failed: ${error.message}. Local mode is active.`, false);
+        renderEntries();
+        return;
+      }
+
+      cloudEntries = (data || []).map(mapCloudEntryToLocal);
+      cloudModeReady = true;
+      updateCloudStatus("Cloud Sync", `Signed in as ${currentUser.email}. Showing shared company workspace entries.`, true);
+      renderEntries();
+    }
+
+    async function persistNewEntry(entry) {
+      if (!isCloudMode()) {
+        const entries = getLocalEntries();
+        entries.push(entry);
+        saveLocalEntries(entries);
+        return;
+      }
+
+      const { error } = await supabaseClient.from("time_entries").insert(mapLocalEntryToCloud(entry));
+      if (error) {
+        alert(`Cloud save failed: ${error.message}. Saving locally instead.`);
+        const entries = getLocalEntries();
+        entries.push(entry);
+        saveLocalEntries(entries);
+        return;
+      }
+
+      await refreshCloudEntries();
+    }
+
+    async function persistUpdatedEntry(id, updates) {
+      if (!isCloudMode()) {
+        saveLocalEntries(getLocalEntries().map(entry => entry.id === id ? { ...entry, ...updates } : entry));
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from("time_entries")
+        .update(mapLocalEntryToCloud(updates, false))
+        .eq("id", id)
+        .eq("company_id", SUPABASE_CONFIG.companyId);
+
+      if (error) return alert(`Cloud update failed: ${error.message}`);
+      await refreshCloudEntries();
+    }
+
+    async function persistDeletedEntry(id) {
+      if (!isCloudMode()) {
+        saveLocalEntries(getLocalEntries().filter(entry => entry.id !== id));
+        return;
+      }
+
+      const { error } = await supabaseClient
+        .from("time_entries")
+        .delete()
+        .eq("id", id)
+        .eq("company_id", SUPABASE_CONFIG.companyId);
+
+      if (error) return alert(`Cloud delete failed: ${error.message}`);
+      await refreshCloudEntries();
+    }
+
+    function mapLocalEntryToCloud(entry, includeCreateFields = true) {
+      const payload = {
+        entry_date: entry.date,
+        project: entry.project,
+        task_type: entry.taskType,
+        notes: entry.notes,
+        start_time: entry.startTime,
+        end_time: entry.endTime,
+        raw_start_time: entry.rawStartTime,
+        raw_end_time: entry.rawEndTime,
+        duration_hours: entry.durationHours,
+        entry_type: entry.entryType,
+        updated_at: new Date().toISOString()
+      };
+
+      if (includeCreateFields) {
+        payload.id = entry.id;
+        payload.company_id = SUPABASE_CONFIG.companyId;
+        payload.user_id = currentUser?.id;
+        payload.created_at = entry.createdAt;
+      }
+
+      return payload;
+    }
+
+    function mapCloudEntryToLocal(entry) {
+      return {
+        id: entry.id,
+        companyId: entry.company_id,
+        userId: entry.user_id,
+        userEmail: entry.user_email || "",
+        date: entry.entry_date,
+        project: entry.project,
+        taskType: entry.task_type,
+        notes: entry.notes || "",
+        startTime: entry.start_time || "",
+        endTime: entry.end_time || "",
+        rawStartTime: entry.raw_start_time || "",
+        rawEndTime: entry.raw_end_time || "",
+        durationHours: Number(entry.duration_hours || 0),
+        entryType: entry.entry_type || "Manual",
+        createdAt: entry.created_at,
+        updatedAt: entry.updated_at
+      };
+    }
+
+    function showSection(sectionName) {
+      document.querySelectorAll(".app-section").forEach(section => {
+        section.classList.remove("active");
+      });
+
+      document.querySelectorAll(".nav-btn[data-section]").forEach(button => {
+        button.classList.toggle("active", button.dataset.section === sectionName);
+      });
+
+      const target = document.getElementById(`${sectionName}Section`);
+      if (target) target.classList.add("active");
+
+      if (sectionName === "reports") {
+        populateReportFilters();
+        renderReports();
+      }
+    }
+
+    function renderDashboard() {
+      const entries = getEntries();
+      const today = getLocalDateString(new Date());
+      const todayTotal = entries
+        .filter(entry => entry.date === today)
+        .reduce((sum, entry) => sum + Number(entry.durationHours || 0), 0);
+      const allTimeTotal = entries.reduce((sum, entry) => sum + Number(entry.durationHours || 0), 0);
+
+      document.getElementById("dashboardTodayHours").textContent = todayTotal.toFixed(2);
+      document.getElementById("dashboardAllHours").textContent = allTimeTotal.toFixed(2);
+      document.getElementById("dashboardEntryCount").textContent = entries.length;
+    }
 
     function populateSelects() {
       const projectSelects = [
@@ -997,7 +1511,7 @@ Previous Version: v0.3a.6
       setTimerStatus("paused");
     }
 
-    function stopTimer() {
+    async function stopTimer() {
       if (elapsedSeconds <= 0) {
         alert("Start the timer before saving a timer entry.");
         return;
@@ -1025,9 +1539,7 @@ Previous Version: v0.3a.6
         createdAt: new Date().toISOString()
       };
 
-      const entries = getEntries();
-      entries.push(entry);
-      saveEntries(entries);
+      await persistNewEntry(entry);
 
       elapsedSeconds = 0;
       timerStartDateTime = null;
@@ -1038,7 +1550,7 @@ Previous Version: v0.3a.6
       renderEntries();
     }
 
-    function saveManualEntry() {
+    async function saveManualEntry() {
       const date = document.getElementById("manualDate").value;
       const project = document.getElementById("manualProject").value;
       const taskType = document.getElementById("manualTaskType").value;
@@ -1106,7 +1618,7 @@ Previous Version: v0.3a.6
           };
         });
 
-        saveEntries(updatedEntries);
+        await persistUpdatedEntry(editingEntryId, updatedEntries.find(entry => entry.id === editingEntryId));
         alert("Time entry updated.");
         cancelEdit(false);
       } else {
@@ -1125,8 +1637,7 @@ Previous Version: v0.3a.6
           createdAt: new Date().toISOString()
         };
 
-        entries.push(entry);
-        saveEntries(entries);
+        await persistNewEntry(entry);
         clearManualForm();
         alert("Manual time entry saved.");
       }
@@ -1189,19 +1700,22 @@ Previous Version: v0.3a.6
       return ((endH * 60 + endM) - (startH * 60 + startM)) / 60;
     }
 
-    function getEntries() {
+    function getLocalEntries() {
       return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
     }
 
-    function saveEntries(entries) {
+    function saveLocalEntries(entries) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
     }
 
-    function deleteEntry(id) {
+    function getEntries() {
+      return isCloudMode() ? cloudEntries : getLocalEntries();
+    }
+
+    async function deleteEntry(id) {
       if (!confirm("Delete this time entry?")) return;
 
-      const entries = getEntries().filter(entry => entry.id !== id);
-      saveEntries(entries);
+      await persistDeletedEntry(id);
 
       if (editingEntryId === id) cancelEdit();
       renderEntries();
@@ -1217,6 +1731,8 @@ Previous Version: v0.3a.6
 
       const total = todaysEntries.reduce((sum, entry) => sum + Number(entry.durationHours || 0), 0);
       document.getElementById("dailyTotal").textContent = `Total: ${total.toFixed(2)} hrs`;
+
+      renderDashboard();
 
       if (todaysEntries.length === 0) {
         container.innerHTML = `<div class="empty">No time entries saved for today yet.</div>`;
@@ -1426,13 +1942,15 @@ Previous Version: v0.3a.6
         .replaceAll("'", "&#039;");
     }
 
-    function init() {
+    async function init() {
       populateSelects();
       clearManualForm();
       document.getElementById("timerStartedAt").textContent = "—";
       setTimerStatus("ready");
       updateTimerDisplay();
       renderEntries();
+      renderDashboard();
+      await initSupabase();
     }
 
     init();
