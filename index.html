@@ -862,6 +862,7 @@ Previous Version: v0.4
               <button class="btn-primary" onclick="signInUser()">Sign In</button>
               <button class="btn-secondary" onclick="signUpUser()">Create User</button>
               <button class="btn-secondary" onclick="signOutUser()">Sign Out</button>
+              <button class="btn-secondary" onclick="sendPasswordReset()">Send Password Reset</button>
             </div>
             <label for="newPassword" style="margin-top: 16px;">New Password From Invite/Reset Link</label>
             <input id="newPassword" type="password" placeholder="Set or update password" />
@@ -1150,9 +1151,9 @@ Previous Version: v0.4
     const STORAGE_KEY = "meridian_time_entries_v02";
     const WORKSPACE_KEY = "meridian_company_workspace_v01";
     const SUPABASE_CONFIG = {
-      url: "https://lktgbqlecrjfbzejwpil.supabase.co",
-      anonKey: "sb_publishable_xwevLHpBAy47UpmFQ9hKbg_ScycOfBR",
-      companyId: "69e12bdd-170d-414a-98c4-4809254881b2"
+      url: "",
+      anonKey: "",
+      companyId: ""
     };
 
     let editingEntryId = null;
@@ -1206,6 +1207,7 @@ Previous Version: v0.4
       }
 
       supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+      await handleAuthRedirect();
       const { data } = await supabaseClient.auth.getSession();
       currentUser = data.session?.user || null;
 
@@ -1215,6 +1217,35 @@ Previous Version: v0.4
       });
 
       await refreshCloudEntries();
+    }
+
+    async function handleAuthRedirect() {
+      const queryParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const code = queryParams.get("code");
+      const accessToken = hashParams.get("access_token");
+      const refreshToken = hashParams.get("refresh_token");
+
+      if (code) {
+        const { error } = await supabaseClient.auth.exchangeCodeForSession(code);
+        if (error) {
+          updateCloudStatus("Local Mode", `Could not establish invite/reset session: ${error.message}`, false);
+          return;
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      if (accessToken && refreshToken) {
+        const { error } = await supabaseClient.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
+        if (error) {
+          updateCloudStatus("Local Mode", `Could not establish magic-link session: ${error.message}`, false);
+          return;
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     }
 
     function updateCloudStatus(label, message, connected) {
@@ -1241,6 +1272,18 @@ Previous Version: v0.4
       const { error } = await supabaseClient.auth.signUp({ email, password });
       if (error) return alert(error.message);
       alert("User created. If email confirmation is enabled, confirm the account before signing in.");
+    }
+
+    async function sendPasswordReset() {
+      if (!supabaseClient) return alert("Add your Supabase URL, anon key, and company ID before sending password reset emails.");
+      const email = document.getElementById("authEmail").value.trim();
+      if (!email) return alert("Enter your email first.");
+
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.href.split("#")[0].split("?")[0]
+      });
+      if (error) return alert(error.message);
+      alert("Password reset email sent. Open the email link in this same browser, then set your new password.");
     }
 
     async function signOutUser() {
