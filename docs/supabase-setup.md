@@ -31,7 +31,7 @@ In `index.html`, fill in `SUPABASE_CONFIG`:
 ```js
 const SUPABASE_CONFIG = {
   url: "https://lktgbqlecrjfbzejwpil.supabase.co",
-  anonKey: "your-supabase-anon-key",
+  anonKey: "sb_publishable_xwevLHpBAy47UpmFQ9hKbg_ScycOfBR",
   companyId: "69e12bdd-170d-414a-98c4-4809254881b2"
 };
 ```
