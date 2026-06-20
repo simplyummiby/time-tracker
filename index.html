@@ -1,13 +1,12 @@
 <!--
-Meridian ITP Time Tracker
-Version: v0.3b
-Date: 2026-06-16
+Meridian Hub
+Version: v0.4
+Date: 2026-06-20
 Changes:
-- Added Reports modal
-- Added Project and Task Type filters in reports
-- Added summary cards for total hours, entries, and projects
-- Added bar-style totals with hrs labels
-Previous Version: v0.3a.6
+- Added Meridian Hub shell with Dashboard, Time Tracker, Expenses, and Reports sections
+- Kept existing timer, manual time entry, local storage, and reports modal features
+- Added expense tracker placeholder and dashboard summary cards
+Previous Version: v0.3b
 -->
 
 <!DOCTYPE html>
@@ -15,7 +14,7 @@ Previous Version: v0.3a.6
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meridian ITP Time Tracker</title>
+  <title>Meridian Hub</title>
 
   <style>
     :root {
@@ -119,11 +118,110 @@ Previous Version: v0.3a.6
       font-weight: 700;
     }
 
+    .nav-btn.active {
+      background: white;
+      color: var(--navy);
+      border-color: white;
+    }
+
     main {
       width: min(1180px, calc(100% - 32px));
       margin: 28px auto 48px;
       display: grid;
       gap: 24px;
+    }
+
+    .app-section {
+      display: none;
+      gap: 24px;
+    }
+
+    .app-section.active {
+      display: grid;
+    }
+
+    .hero-card {
+      background: linear-gradient(135deg, #071b3a, #125adf);
+      color: white;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      right: -90px;
+      top: -90px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.10);
+    }
+
+    .hero-card h2 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      letter-spacing: -1px;
+    }
+
+    .hero-card p {
+      max-width: 760px;
+      margin: 0;
+      color: #dce8ff;
+      font-size: 1.05rem;
+      line-height: 1.6;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .hub-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .metric-value {
+      color: var(--navy);
+      display: block;
+      font-size: 2.1rem;
+      font-weight: 900;
+      margin-top: 10px;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .module-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      background: #fbfdff;
+    }
+
+    .module-card h3 { margin: 0 0 8px; }
+
+    .module-card p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0 0 16px;
     }
 
     .card {
@@ -634,7 +732,9 @@ Previous Version: v0.3a.6
       .timer-actions,
       .report-filters,
       .report-summary,
-      .report-grid {
+      .report-grid,
+      .dashboard-grid,
+      .quick-actions {
         grid-template-columns: 1fr;
       }
 
@@ -663,158 +763,249 @@ Previous Version: v0.3a.6
     <div class="brand">
       <div class="logo-mark"></div>
       <div>
-        <h1>MERIDIAN ITP</h1>
-        <p>Time Tracker</p>
+        <h1>MERIDIAN HUB</h1>
+        <p>Operations Center</p>
       </div>
     </div>
 
-    <div class="top-actions">
-      <button class="nav-btn" onclick="alert('Timesheet modal coming soon.')">📅 Timesheet</button>
-      <button class="nav-btn" onclick="openReportsModal()">📊 Reports</button>
-      <button class="nav-btn" onclick="alert('Projects will later pull from Coda.')">📁 Projects</button>
-      <button class="nav-btn" onclick="alert('Settings coming soon.')">⚙️ Settings</button>
+    <div class="top-actions" role="navigation" aria-label="Meridian Hub sections">
+      <button class="nav-btn active" data-section="dashboard" onclick="showSection('dashboard')">🏠 Dashboard</button>
+      <button class="nav-btn" data-section="timeTracker" onclick="showSection('timeTracker')">⏱ Time Tracker</button>
+      <button class="nav-btn" data-section="expenses" onclick="showSection('expenses')">💳 Expenses</button>
+      <button class="nav-btn" data-section="reports" onclick="showSection('reports')">📊 Reports</button>
     </div>
   </header>
 
   <main>
-    <section class="card">
-      <div class="section-title">
-        <h2>▶ Timer Entry</h2>
+    <section class="app-section active" id="dashboardSection">
+      <div class="card hero-card">
+        <h2>Meridian Hub</h2>
+        <p>A central workspace for time tracking today and expenses next. Your existing timer, manual entries, local browser storage, and reports stay in place while the app grows into a fuller operations hub.</p>
       </div>
 
-      <div class="form-grid">
-        <div>
-          <label for="project">Project</label>
-          <select id="project"></select>
+      <div class="dashboard-grid">
+        <div class="hub-card">
+          <span class="metric-label">Today Hours</span>
+          <strong class="metric-value" id="dashboardTodayHours">0.00</strong>
         </div>
-
-        <div>
-          <label for="taskType">Task Type</label>
-          <select id="taskType"></select>
+        <div class="hub-card">
+          <span class="metric-label">All Time Hours</span>
+          <strong class="metric-value" id="dashboardAllHours">0.00</strong>
         </div>
-
-        <div class="full">
-          <label for="timerNotes">Notes Optional</label>
-          <textarea id="timerNotes" placeholder="What are you working on?"></textarea>
+        <div class="hub-card">
+          <span class="metric-label">Time Entries</span>
+          <strong class="metric-value" id="dashboardEntryCount">0</strong>
+        </div>
+        <div class="hub-card">
+          <span class="metric-label">Expense Status</span>
+          <strong class="metric-value">Next</strong>
         </div>
       </div>
 
-      <div class="timer-panel">
-        <div class="timer-state-bar" id="timerStatus">
-          <span class="status-dot"></span>
-          <span>Ready to Start</span>
+      <section class="card">
+        <div class="section-title">
+          <h2>⚡ Quick Actions</h2>
         </div>
-
-        <div class="timer-display">
-          <div class="timer-labels">
-            <span>Hours</span>
-            <span>Minutes</span>
-            <span>Seconds</span>
+        <div class="quick-actions">
+          <div class="module-card">
+            <h3>Log Time</h3>
+            <p>Open the existing timer and manual time entry tools.</p>
+            <button class="btn-primary" onclick="showSection('timeTracker')">Go to Time Tracker</button>
           </div>
-
-          <div class="timer-time" id="timerDisplay">00:00:00</div>
-
-          <div class="timer-started">
-            Started: <strong id="timerStartedAt">—</strong>
+          <div class="module-card">
+            <h3>Enter Expense</h3>
+            <p>Expense tracking is reserved as the next module, with a placeholder ready now.</p>
+            <button class="btn-secondary" onclick="showSection('expenses')">Preview Expenses</button>
+          </div>
+          <div class="module-card">
+            <h3>Review Reports</h3>
+            <p>Use the existing reports modal with project and task-type filters.</p>
+            <button class="btn-secondary" onclick="openReportsModal()">Open Reports</button>
           </div>
         </div>
-      </div>
-
-      <div class="timer-actions">
-        <button class="btn-primary" onclick="startTimer()">▶ Start</button>
-        <button class="btn-secondary" onclick="pauseTimer()">Ⅱ Pause</button>
-        <button class="btn-danger" onclick="stopTimer()">■ Stop & Save</button>
-      </div>
-
-      <p class="helper-text">
-        Forgot to start timer?<br />
-        <strong>Use Manual Time Entry below.</strong>
-      </p>
+      </section>
     </section>
 
-    <section class="card" id="manualEntryCard">
-      <div class="section-title">
-        <h2>⏱ Manual Time Entry</h2>
-      </div>
-
-      <div class="edit-banner" id="editBanner">
-        Editing existing time entry
-      </div>
-
-      <div class="form-grid">
-        <div>
-          <label for="manualDate">Date</label>
-          <input id="manualDate" type="date" />
+    <section class="app-section" id="timeTrackerSection">
+      <section class="card">
+        <div class="section-title">
+          <h2>▶ Timer Entry</h2>
         </div>
 
-        <div>
-          <label for="manualProject">Project</label>
-          <select id="manualProject"></select>
+        <div class="form-grid">
+          <div>
+            <label for="project">Project</label>
+            <select id="project"></select>
+          </div>
+
+          <div>
+            <label for="taskType">Task Type</label>
+            <select id="taskType"></select>
+          </div>
+
+          <div class="full">
+            <label for="timerNotes">Notes Optional</label>
+            <textarea id="timerNotes" placeholder="What are you working on?"></textarea>
+          </div>
         </div>
 
-        <div>
-          <label for="manualTaskType">Task Type</label>
-          <select id="manualTaskType"></select>
-        </div>
-      </div>
+        <div class="timer-panel">
+          <div class="timer-state-bar" id="timerStatus">
+            <span class="status-dot"></span>
+            <span>Ready to Start</span>
+          </div>
 
-      <div class="manual-options" style="margin-top: 24px;">
-        <div>
-          <label class="radio-label">
-            <input type="radio" name="entryMode" value="hours" checked />
-            Total Hours
-          </label>
-
-          <label for="manualHours">Hours</label>
-          <input id="manualHours" type="number" step="0.25" placeholder="1.25" />
-        </div>
-
-        <div>
-          <label class="radio-label">
-            <input type="radio" name="entryMode" value="range" />
-            Start Time / End Time
-          </label>
-
-          <div class="time-row">
-            <div>
-              <label for="startTime">Start Time</label>
-              <input id="startTime" type="time" />
+          <div class="timer-display">
+            <div class="timer-labels">
+              <span>Hours</span>
+              <span>Minutes</span>
+              <span>Seconds</span>
             </div>
 
-            <strong>→</strong>
+            <div class="timer-time" id="timerDisplay">00:00:00</div>
 
-            <div>
-              <label for="endTime">End Time</label>
-              <input id="endTime" type="time" />
+            <div class="timer-started">
+              Started: <strong id="timerStartedAt">—</strong>
             </div>
           </div>
         </div>
 
-        <div>
-          <label for="manualNotes">Notes Optional</label>
-          <textarea id="manualNotes" placeholder="What was completed?"></textarea>
+        <div class="timer-actions">
+          <button class="btn-primary" onclick="startTimer()">▶ Start</button>
+          <button class="btn-secondary" onclick="pauseTimer()">Ⅱ Pause</button>
+          <button class="btn-danger" onclick="stopTimer()">■ Stop & Save</button>
         </div>
-      </div>
 
-      <div class="save-row">
-        <button class="btn-primary" id="manualSaveBtn" onclick="saveManualEntry()">💾 Save Manual Entry</button>
-        <button class="btn-secondary" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">Cancel Edit</button>
-      </div>
+        <p class="helper-text">
+          Forgot to start timer?<br />
+          <strong>Use Manual Time Entry below.</strong>
+        </p>
+      </section>
+
+      <section class="card" id="manualEntryCard">
+        <div class="section-title">
+          <h2>⏱ Manual Time Entry</h2>
+        </div>
+
+        <div class="edit-banner" id="editBanner">
+          Editing existing time entry
+        </div>
+
+        <div class="form-grid">
+          <div>
+            <label for="manualDate">Date</label>
+            <input id="manualDate" type="date" />
+          </div>
+
+          <div>
+            <label for="manualProject">Project</label>
+            <select id="manualProject"></select>
+          </div>
+
+          <div>
+            <label for="manualTaskType">Task Type</label>
+            <select id="manualTaskType"></select>
+          </div>
+        </div>
+
+        <div class="manual-options" style="margin-top: 24px;">
+          <div>
+            <label class="radio-label">
+              <input type="radio" name="entryMode" value="hours" checked />
+              Total Hours
+            </label>
+
+            <label for="manualHours">Hours</label>
+            <input id="manualHours" type="number" step="0.25" placeholder="1.25" />
+          </div>
+
+          <div>
+            <label class="radio-label">
+              <input type="radio" name="entryMode" value="range" />
+              Start Time / End Time
+            </label>
+
+            <div class="time-row">
+              <div>
+                <label for="startTime">Start Time</label>
+                <input id="startTime" type="time" />
+              </div>
+
+              <strong>→</strong>
+
+              <div>
+                <label for="endTime">End Time</label>
+                <input id="endTime" type="time" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label for="manualNotes">Notes Optional</label>
+            <textarea id="manualNotes" placeholder="What was completed?"></textarea>
+          </div>
+        </div>
+
+        <div class="save-row">
+          <button class="btn-primary" id="manualSaveBtn" onclick="saveManualEntry()">💾 Save Manual Entry</button>
+          <button class="btn-secondary" id="cancelEditBtn" onclick="cancelEdit()" style="display:none;">Cancel Edit</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <h2>📋 Today's Entries</h2>
+          <strong id="dailyTotal">Total: 0.00 hrs</strong>
+        </div>
+
+        <div id="entriesContainer"></div>
+      </section>
     </section>
 
-    <section class="card">
-      <div class="section-title">
-        <h2>📋 Today's Entries</h2>
-        <strong id="dailyTotal">Total: 0.00 hrs</strong>
-      </div>
+    <section class="app-section" id="expensesSection">
+      <section class="card hero-card">
+        <h2>Expense Tracker</h2>
+        <p>This module is intentionally a placeholder for now. The next build can add vendor/payee, amount, category, paid status, and receipt fields without disturbing the working time tracker.</p>
+      </section>
+      <section class="card">
+        <div class="section-title">
+          <h2>💳 Expense Tracker Placeholder</h2>
+        </div>
+        <div class="quick-actions">
+          <div class="module-card">
+            <h3>Planned Version 0.2 Fields</h3>
+            <p>Vendor/payee, amount, date, category, description, and paid/unpaid status.</p>
+          </div>
+          <div class="module-card">
+            <h3>Future Receipt Uploads</h3>
+            <p>Receipts are planned after the first expense entry workflow is working.</p>
+          </div>
+          <div class="module-card">
+            <h3>Cloud Sync Later</h3>
+            <p>Team sync should be added through the shared cloud backend when ready.</p>
+          </div>
+        </div>
+      </section>
+    </section>
 
-      <div id="entriesContainer"></div>
+    <section class="app-section" id="reportsSection">
+      <section class="card">
+        <div class="section-title">
+          <h2>📊 Reports</h2>
+        </div>
+        <p class="helper-text">The original reports modal is still available and now lives inside the Meridian Hub Reports section.</p>
+        <div class="save-row">
+          <button class="btn-primary" onclick="openReportsModal()">Open Time Reports</button>
+          <button class="btn-secondary" onclick="showSection('timeTracker')">Back to Time Tracker</button>
+        </div>
+      </section>
     </section>
 
     <p class="modal-note">
-      v0.3b saves entries locally in this browser. Supabase login and team sync come later.
+      v0.4 saves time entries locally in this browser. Supabase login and team sync come later.
     </p>
   </main>
+
 
   <div class="modal-backdrop" id="reportsBackdrop" onclick="handleBackdropClick(event)">
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="reportsTitle">
@@ -908,6 +1099,37 @@ Previous Version: v0.3a.6
     let elapsedSeconds = 0;
     let timerRunning = false;
     let timerStartDateTime = null;
+
+    function showSection(sectionName) {
+      document.querySelectorAll(".app-section").forEach(section => {
+        section.classList.remove("active");
+      });
+
+      document.querySelectorAll(".nav-btn[data-section]").forEach(button => {
+        button.classList.toggle("active", button.dataset.section === sectionName);
+      });
+
+      const target = document.getElementById(`${sectionName}Section`);
+      if (target) target.classList.add("active");
+
+      if (sectionName === "reports") {
+        populateReportFilters();
+        renderReports();
+      }
+    }
+
+    function renderDashboard() {
+      const entries = getEntries();
+      const today = getLocalDateString(new Date());
+      const todayTotal = entries
+        .filter(entry => entry.date === today)
+        .reduce((sum, entry) => sum + Number(entry.durationHours || 0), 0);
+      const allTimeTotal = entries.reduce((sum, entry) => sum + Number(entry.durationHours || 0), 0);
+
+      document.getElementById("dashboardTodayHours").textContent = todayTotal.toFixed(2);
+      document.getElementById("dashboardAllHours").textContent = allTimeTotal.toFixed(2);
+      document.getElementById("dashboardEntryCount").textContent = entries.length;
+    }
 
     function populateSelects() {
       const projectSelects = [
@@ -1218,6 +1440,8 @@ Previous Version: v0.3a.6
       const total = todaysEntries.reduce((sum, entry) => sum + Number(entry.durationHours || 0), 0);
       document.getElementById("dailyTotal").textContent = `Total: ${total.toFixed(2)} hrs`;
 
+      renderDashboard();
+
       if (todaysEntries.length === 0) {
         container.innerHTML = `<div class="empty">No time entries saved for today yet.</div>`;
         return;
@@ -1433,6 +1657,7 @@ Previous Version: v0.3a.6
       setTimerStatus("ready");
       updateTimerDisplay();
       renderEntries();
+      renderDashboard();
     }
 
     init();
