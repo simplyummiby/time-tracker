@@ -36,9 +36,9 @@ const SUPABASE_CONFIG = {
 };
 ```
 
-The app also has Supabase Settings fields in the Cloud Workspace panel. Use those fields to save the URL, anon key, and company id into browser `localStorage` so they do not get wiped out when `index.html` changes during development.
+These values are configured in the code instead of shown on the splash page. The publishable key is safe for browser use, but the setup fields are hidden from the user-facing login screen to keep the splash page clean.
 
-If the anon key is empty, the app intentionally stays in local mode and continues to use browser `localStorage`. The user id is not the anon key; get the anon public key from **Supabase → Project Settings → API**.
+If the publishable/anon key is empty or invalid, the app intentionally stays in local mode and continues to use browser `localStorage`. The user id is not the anon key; get the publishable key from **Supabase → Project Settings → API**.
 
 
 ## Fix invite links that open `localhost`

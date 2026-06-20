@@ -3,8 +3,8 @@ Meridian Hub
 Version: v0.5
 Date: 2026-06-20
 Changes:
-- Moved sign-in and workspace setup to a splash page
-- Kept cloud-ready, user-aware time entry sync with local fallback
+- Made splash page hide app navigation and operational detail until entry
+- Hid Supabase technical settings from the user-facing page
 - Kept existing timer, manual time entry, local storage, and reports modal features
 Previous Version: v0.4
 -->
@@ -106,6 +106,10 @@ Previous Version: v0.4
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
+    }
+
+    .top-actions.hidden {
+      display: none;
     }
 
     .nav-btn {
@@ -860,7 +864,7 @@ Previous Version: v0.4
       </div>
     </div>
 
-    <div class="top-actions" role="navigation" aria-label="Meridian Hub sections">
+    <div class="top-actions hidden" id="appNav" role="navigation" aria-label="Meridian Hub sections">
       <button class="nav-btn" data-section="dashboard" onclick="showSection('dashboard')">🏠 Dashboard</button>
       <button class="nav-btn" data-section="timeTracker" onclick="showSection('timeTracker')">⏱ Time Tracker</button>
       <button class="nav-btn" data-section="expenses" onclick="showSection('expenses')">💳 Expenses</button>
@@ -876,10 +880,9 @@ Previous Version: v0.4
             <h2>Meridian Hub</h2>
             <p>Sign in to sync time entries across the company workspace, or continue locally while setup is still in progress.</p>
             <div class="splash-list">
-              <span>⏱ Track time by project and task</span>
-              <span>☁️ Sync entries by user when Supabase is connected</span>
-              <span>💳 Company expenses module coming next</span>
-              <span>📊 Reports and exports planned for time and expenses</span>
+              <span>Internal operations workspace</span>
+              <span>Secure company sign-in</span>
+              <span>Cloud sync when connected</span>
             </div>
           </div>
           <p>Local mode remains available as a fallback, but cloud mode is recommended for team use.</p>
@@ -914,30 +917,12 @@ Previous Version: v0.4
           </div>
 
           <div>
-            <label for="workspaceName">Company Workspace</label>
-            <input id="workspaceName" type="text" value="Meridian ITP" />
-            <p class="auth-note">Configure Supabase below to enable shared cloud entries. Until then, the tracker continues to use local browser storage.</p>
+            <span class="metric-label">Company Workspace</span>
+            <strong>Meridian ITP</strong>
+            <p class="auth-note">Sign in to enter the shared company workspace. Local mode is available for browser-only testing.</p>
           </div>
 
-          <div class="workspace-panel">
-            <div>
-              <label for="supabaseUrl">Supabase URL</label>
-              <input id="supabaseUrl" type="url" placeholder="https://your-project.supabase.co" />
-            </div>
-            <div>
-              <label for="supabaseAnonKey">Supabase Publishable Key</label>
-              <input id="supabaseAnonKey" type="password" placeholder="Paste publishable/anon key" />
-            </div>
-            <div class="full">
-              <label for="supabaseCompanyId">Company ID</label>
-              <input id="supabaseCompanyId" type="text" placeholder="Company UUID" />
-              <div class="auth-actions">
-                <button class="btn-secondary" onclick="saveSupabaseSettings()">Save Supabase Settings</button>
-              </div>
-            </div>
-          </div>
-
-          <p class="auth-note" id="authStatus">Supabase is not configured yet. Local mode is active.</p>
+          <p class="auth-note" id="authStatus">Checking workspace connection…</p>
         </section>
       </div>
     </section>
@@ -1303,23 +1288,6 @@ Previous Version: v0.4
       SUPABASE_CONFIG.url = savedSettings.url || SUPABASE_CONFIG.url;
       SUPABASE_CONFIG.anonKey = savedSettings.anonKey || SUPABASE_CONFIG.anonKey;
       SUPABASE_CONFIG.companyId = savedSettings.companyId || SUPABASE_CONFIG.companyId;
-
-      document.getElementById("supabaseUrl").value = SUPABASE_CONFIG.url;
-      document.getElementById("supabaseAnonKey").value = SUPABASE_CONFIG.anonKey;
-      document.getElementById("supabaseCompanyId").value = SUPABASE_CONFIG.companyId;
-    }
-
-    async function saveSupabaseSettings() {
-      SUPABASE_CONFIG.url = document.getElementById("supabaseUrl").value.trim();
-      SUPABASE_CONFIG.anonKey = document.getElementById("supabaseAnonKey").value.trim();
-      SUPABASE_CONFIG.companyId = document.getElementById("supabaseCompanyId").value.trim();
-
-      localStorage.setItem(SUPABASE_SETTINGS_KEY, JSON.stringify(SUPABASE_CONFIG));
-      supabaseClient = null;
-      currentUser = null;
-      cloudEntries = [];
-      cloudModeReady = false;
-      await initSupabase();
     }
 
     function isSupabaseConfigured() {
@@ -1332,11 +1300,7 @@ Previous Version: v0.4
 
     async function initSupabase() {
       loadSupabaseSettings();
-      const workspaceInput = document.getElementById("workspaceName");
-      workspaceInput.value = localStorage.getItem(WORKSPACE_KEY) || workspaceInput.value;
-      workspaceInput.addEventListener("change", () => {
-        localStorage.setItem(WORKSPACE_KEY, workspaceInput.value.trim() || "Meridian ITP");
-      });
+      localStorage.setItem(WORKSPACE_KEY, localStorage.getItem(WORKSPACE_KEY) || "Meridian ITP");
 
       if (!isSupabaseConfigured() || !window.supabase) {
         updateCloudStatus("Local Mode", "Supabase is not configured yet. Local mode is active.", false);
@@ -1582,6 +1546,8 @@ Previous Version: v0.4
     }
 
     function showSection(sectionName) {
+      document.getElementById("appNav").classList.toggle("hidden", sectionName === "splash");
+
       document.querySelectorAll(".app-section").forEach(section => {
         section.classList.remove("active");
       });
