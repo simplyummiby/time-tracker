@@ -66,10 +66,12 @@ Version 1 should prove that two or more team members can reliably enter and view
 - Add recurring expense templates.
 - Add recurring expense reminders or manual generation.
 
-### Version 0.4 — Dashboard and Reports
-- Add unified dashboard for time and expenses.
+### Version 0.4 — Dashboard, Reports, and Exports
+- Add unified dashboard for time and company operating expenses.
 - Add charts for weekly hours, monthly expenses, unpaid expenses, and project totals.
+- Add combined reporting tabs for Time, Company Expenses, and Summary.
 - Add CSV export.
+- Add PDF export for filtered report results.
 - Add saved report filters.
 
 ### Version 0.5 — Admin Controls and Auditability
@@ -105,6 +107,7 @@ Recommended approach:
 - Cloud database is the source of truth.
 - Browser local storage may store draft form values, UI preferences, and last-used filters.
 - Do not rely on local storage for team records once multiple users are involved.
+- The current local-only tracker does not reliably attribute entries to individual users because there is no sign-in or user field saved with each time entry.
 - Avoid offline-first complexity until there is clear evidence that users need it.
 
 ## 8. Monetization Suggestions
@@ -202,8 +205,10 @@ The basic hub is moderate complexity because time and expense entry forms are st
 
 ### Reports
 - Date range selector.
-- Report tabs for Time, Expenses, and Combined Summary.
+- Report tabs for Time, Company Expenses, and Combined Summary.
+- Filters for user, project, task type, vendor, category, paid status, and date range once those data fields exist.
 - Export CSV button.
+- Future PDF export button that generates a PDF from the currently filtered report results.
 - Charts should stay simple in early versions.
 
 ### Settings
@@ -351,7 +356,9 @@ The basic hub is moderate complexity because time and expense entry forms are st
 
 ### Phase 4 — Reports and Exports
 - Add unified dashboard cards.
+- Add reports for both time entries and company operating expenses.
 - Add CSV export.
+- Add PDF export from filtered report results.
 - Add basic charts.
 - Add report filters.
 
