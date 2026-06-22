@@ -35,6 +35,8 @@ Previous Version: v0.4
 
     * { box-sizing: border-box; }
 
+    [hidden] { display: none !important; }
+
     body {
       margin: 0;
       font-family: Inter, Segoe UI, Arial, sans-serif;
@@ -927,7 +929,8 @@ Previous Version: v0.4
       </div>
     </section>
 
-    <section class="app-section" id="dashboardSection">
+    <div id="appShell" hidden>
+      <section class="app-section" id="dashboardSection">
       <div class="card hero-card">
         <h2>Meridian Hub</h2>
         <p>A central workspace for time tracking today and company operating expenses next. Your existing timer, manual entries, local browser storage, and reports stay in place while the app grows into a fuller operations hub.</p>
@@ -1171,9 +1174,10 @@ Previous Version: v0.4
       </section>
     </section>
 
-    <p class="modal-note">
-      v0.5 supports Supabase cloud sync when configured and keeps local browser storage as the fallback.
-    </p>
+      <p class="modal-note">
+        v0.5 supports Supabase cloud sync when configured and keeps local browser storage as the fallback.
+      </p>
+    </div>
   </main>
 
 
@@ -1546,7 +1550,9 @@ Previous Version: v0.4
     }
 
     function showSection(sectionName) {
-      document.getElementById("appNav").classList.toggle("hidden", sectionName === "splash");
+      const isSplash = sectionName === "splash";
+      document.getElementById("appNav").classList.toggle("hidden", isSplash);
+      document.getElementById("appShell").hidden = isSplash;
 
       document.querySelectorAll(".app-section").forEach(section => {
         section.classList.remove("active");
