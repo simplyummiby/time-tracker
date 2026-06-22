@@ -1367,12 +1367,39 @@ Previous Version: v0.4
     }
 
     async function signInUser() {
-      if (!supabaseClient) return alert("Add your Supabase URL, anon key, and company ID before signing in.");
+      if (!supabaseClient) {
+        updateCloudStatus("Local Mode", "Supabase is not connected yet. Check the project URL and publishable key.", false);
+        alert("Supabase is not connected yet. Check the project URL and publishable key.");
+        return;
+      }
+
       const email = document.getElementById("authEmail").value.trim();
       const password = document.getElementById("authPassword").value;
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      if (error) return alert(error.message);
-      await refreshCloudEntries();
+
+      if (!email || !password) {
+        alert("Enter both email and password to sign in.");
+        return;
+      }
+
+      updateCloudStatus("Signing In", "Checking your email and password…", false);
+
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+        if (error) {
+          updateCloudStatus("Sign In Failed", error.message, false);
+          alert(error.message);
+          return;
+        }
+
+        currentUser = data.user || null;
+        updateCloudStatus("Signed In", "Sign-in succeeded. Loading company workspace…", true);
+        await refreshCloudEntries();
+      } catch (error) {
+        const message = error?.message || "Unexpected sign-in error.";
+        updateCloudStatus("Sign In Failed", message, false);
+        alert(message);
+      }
     }
 
     async function signUpUser() {
@@ -1439,7 +1466,8 @@ Previous Version: v0.4
 
       if (error) {
         cloudModeReady = false;
-        updateCloudStatus("Local Mode", `Cloud load failed: ${error.message}. Local mode is active.`, false);
+        updateCloudStatus("Cloud Load Failed", `Signed in, but workspace entries could not load: ${error.message}`, false);
+        alert(`Signed in, but workspace entries could not load: ${error.message}`);
         renderEntries();
         return;
       }
